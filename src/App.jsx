@@ -7,6 +7,16 @@ import ProtectedRoute from "./components/protected/ProtectedRoute";
 import "./App.css";
 import TeacherDashboard from "./pages/TeacherDashboard";
 
+
+const StudentDashboard = () => (
+  <div className="p-20 bg-[#fdfbf7] min-h-screen">
+    <div className="max-w-4xl mx-auto grounded-card">
+      <h1 className="text-3xl font-bold mb-4">Student Dashboard</h1>
+      <p className="text-slate-600">Welcome to your academic portal. Your preparation starts here.</p>
+    </div>
+  </div>
+);
+
 function App() {
   return (
     <AuthProvider>
@@ -16,7 +26,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
+
           {/* Common Auth */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
@@ -24,7 +34,7 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['student']} />}>
             <Route path="/dashboard/student" element={<StudentDashboard />} />
           </Route>
-          
+
           <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
             <Route path="/dashboard/teacher" element={<TeacherDashboard />} />
           </Route>
