@@ -5,7 +5,7 @@ import Register from "./components/auth/Register";
 import ForgotPassword from "./components/auth/ForgotPassword";
 import ProtectedRoute from "./components/protected/ProtectedRoute";
 import "./App.css";
-import TeacherDashboard from "./pages/TeacherDashboard";
+import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 
 
 const StudentDashboard = () => (
@@ -35,9 +35,9 @@ function App() {
             <Route path="/dashboard/student" element={<StudentDashboard />} />
           </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
+          {/* <Route element={<ProtectedRoute allowedRoles={['teacher']} />}> */}
             <Route path="/dashboard/teacher" element={<TeacherDashboard />} />
-          </Route>
+          {/* </Route> */}
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/login" replace />} />
