@@ -16,17 +16,9 @@ import PerformanceAnalytics from "./components/dashboard/PerformanceAnalytics";
 import Profile from "./components/dashboard/Profile";
 import ConnectTeachers from "./components/dashboard/ConnectTeachers";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
+import TeacherLogin from "./components/auth/teacher/TeacherLogin";
 import "./App.css";
 
-
-const TeacherDashboard = () => (
-  <div className="p-20 bg-[#fdfbf7] min-h-screen">
-    <div className="max-w-4xl mx-auto grounded-card">
-      <h1 className="text-3xl font-bold mb-4">Faculty Workspace</h1>
-      <p className="text-slate-600">Welcome to the educator portal. Manage your materials and students efficiently.</p>
-    </div>
-  </div>
-);
 
 function App() {
   return (
@@ -58,11 +50,13 @@ function App() {
           </Route>
 
            {/* <Route element={<ProtectedRoute allowedRoles={['teacher']} />}> */}
+            <Route path="/teacher/login" element={<TeacherLogin />} />
+            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
             <Route path="/dashboard/teacher" element={<TeacherDashboard />} />
           {/* </Route> */}
 
           {/* Fallback */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* <Route path="*" element={<Navigate to="/login" replace />} /> */}
         </Routes>
       </Router>
     </AuthProvider>
