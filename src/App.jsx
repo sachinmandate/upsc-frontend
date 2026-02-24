@@ -15,6 +15,10 @@ import CalendarView from "./components/dashboard/CalendarView";
 import PerformanceAnalytics from "./components/dashboard/PerformanceAnalytics";
 import Profile from "./components/dashboard/Profile";
 import ConnectTeachers from "./components/dashboard/ConnectTeachers";
+import SubjectSelection from "./components/dashboard/SubjectSelection";
+import WatchHistory from "./components/dashboard/WatchHistory";
+import ChatSection from "./components/dashboard/ChatSection";
+import Payments from "./components/dashboard/Payments";
 import "./App.css";
 
 
@@ -40,19 +44,28 @@ function App() {
           {/* Common Auth */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
+          {/* Onboarding - Subject Selection */}
+          <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+            <Route path="/onboarding/subjects" element={<SubjectSelection />} />
+          </Route>
+
           {/* Student Dashboard Routes */}
           <Route element={<ProtectedRoute allowedRoles={['student']} />}>
             <Route path="/dashboard/student" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
               <Route path="notes" element={<StudyMaterial />} />
               <Route path="videos" element={<VideoLectures />} />
+              <Route path="watch-history" element={<WatchHistory />} />
               <Route path="assignments" element={<Assignments />} />
               <Route path="mock-tests" element={<MockTests />} />
               <Route path="planner" element={<DailyPlanner />} />
               <Route path="calendar" element={<CalendarView />} />
               <Route path="analytics" element={<PerformanceAnalytics />} />
+              <Route path="chat" element={<ChatSection />} />
+              <Route path="payments" element={<Payments />} />
               <Route path="profile" element={<Profile />} />
               <Route path="teachers" element={<ConnectTeachers />} />
+              <Route path="select-subjects" element={<SubjectSelection />} />
             </Route>
           </Route>
 

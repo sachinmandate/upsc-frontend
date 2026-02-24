@@ -7,6 +7,8 @@ import {
   assignments,
   dailyTasks,
   mockTestScores,
+  videoLectures,
+  activityFeed,
 } from "../../data/dashboardData";
 import {
   BookOpen,
@@ -19,14 +21,46 @@ import {
   TrendingUp,
   CheckCircle2,
   FileText,
+  Play,
+  User,
+  Download,
+  FileCheck,
+  UserPlus,
+  History,
 } from "lucide-react";
 
 const quote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+
+const subjectColors = {
+  "Indian Polity": "#312e81",
+  "History": "#9333ea",
+  "Economy": "#d97706",
+  "Geography": "#059669",
+  "Environment": "#65a30d",
+  "CSAT": "#dc2626",
+};
+
+const activityIcons = {
+  video: Video,
+  assignment: FileCheck,
+  note: Download,
+  test: BarChart3,
+  teacher: UserPlus,
+};
+
+const activityColors = {
+  video: "bg-indigo-50 text-indigo-600",
+  assignment: "bg-amber-50 text-amber-600",
+  note: "bg-green-50 text-green-600",
+  test: "bg-rose-50 text-rose-600",
+  teacher: "bg-violet-50 text-violet-600",
+};
 
 const DashboardHome = () => {
   const pendingAssignments = assignments.filter((a) => a.status === "pending" || a.status === "overdue").length;
   const completedTasks = dailyTasks.filter((t) => t.completed).length;
   const latestScore = mockTestScores[mockTestScores.length - 1];
+  const continueWatchingVideos = videoLectures.filter((v) => v.progress > 0 && v.progress < 100).slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -132,6 +166,50 @@ const DashboardHome = () => {
         </div>
       </div>
 
+      {/* Continue Watching */}
+      {continueWatchingVideos.length > 0 && (
+        <div className="bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">Continue Watching</h2>
+            <Link
+              to="/dashboard/student/videos"
+              className="text-xs font-bold uppercase tracking-wider text-amber-600 hover:text-amber-700 flex items-center gap-1 transition-colors"
+            >
+              View All <ArrowRight size={14} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {continueWatchingVideos.map((video) => (
+              <Link
+                key={video.id}
+                to="/dashboard/student/videos"
+                className="flex items-center gap-3 p-3 border border-slate-100 hover:border-slate-200 hover:bg-slate-50/50 transition-all group"
+              >
+                <div
+                  className="w-12 h-12 flex items-center justify-center shrink-0 relative"
+                  style={{ backgroundColor: (subjectColors[video.subject] || "#1e293b") + "15" }}
+                >
+                  <Play size={16} style={{ color: subjectColors[video.subject] || "#1e293b" }} className="ml-0.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800 truncate">{video.title}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-slate-400 truncate">{video.teacher}</span>
+                    <span className="text-xs font-semibold text-amber-600">{video.progress}%</span>
+                  </div>
+                  {video.resumeTimestamp && (
+                    <p className="text-[10px] text-amber-600 font-semibold mt-1">Resume at {video.resumeTimestamp}</p>
+                  )}
+                  <div className="mt-1.5 w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full" style={{ width: `${video.progress}%` }} />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Main Grid */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Subject Progress - spans 2 cols */}
@@ -213,35 +291,36 @@ const DashboardHome = () => {
 
       {/* Bottom row */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Recent Materials */}
+        {/* Recent Activity Feed */}
         <div className="bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">Recently Accessed</h2>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">Recent Activity</h2>
             <Link
-              to="/dashboard/student/notes"
+              to="/dashboard/student/watch-history"
               className="text-xs font-bold uppercase tracking-wider text-amber-600 hover:text-amber-700 flex items-center gap-1 transition-colors"
             >
-              Browse <ArrowRight size={14} />
+              History <ArrowRight size={14} />
             </Link>
           </div>
           <div className="space-y-3">
-            {recentMaterials.map((material) => (
-              <div
-                key={material.id}
-                className="flex items-center gap-3 p-3 border border-slate-100 hover:border-slate-200 hover:bg-slate-50/50 transition-all cursor-pointer"
-              >
-                <div className="w-9 h-9 bg-amber-50 flex items-center justify-center shrink-0">
-                  <FileText size={16} className="text-amber-600" />
+            {activityFeed.map((activity) => {
+              const Icon = activityIcons[activity.type] || History;
+              const colorClass = activityColors[activity.type] || "bg-slate-50 text-slate-600";
+              return (
+                <div
+                  key={activity.id}
+                  className="flex items-center gap-3 p-3 border border-slate-100 hover:border-slate-200 hover:bg-slate-50/50 transition-all"
+                >
+                  <div className={`w-9 h-9 flex items-center justify-center shrink-0 ${colorClass.split(" ")[0]}`}>
+                    <Icon size={16} className={colorClass.split(" ")[1]} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">{activity.text}</p>
+                    <p className="text-xs text-slate-400">{activity.time}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 truncate">{material.title}</p>
-                  <p className="text-xs text-slate-400">{material.subject} &middot; {material.date}</p>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-2 py-0.5 shrink-0 hidden sm:inline">
-                  {material.type}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -281,14 +360,14 @@ const DashboardHome = () => {
           </Link>
 
           <Link
-            to="/dashboard/student/calendar"
+            to="/dashboard/student/chat"
             className="bg-white border border-slate-200 shadow-sm p-4 sm:p-5 hover:border-slate-300 hover:shadow transition-all group"
           >
-            <div className="w-10 h-10 bg-green-50 flex items-center justify-center mb-3 group-hover:bg-green-100 transition-colors">
-              <CalendarDays size={20} className="text-green-600" />
+            <div className="w-10 h-10 bg-violet-50 flex items-center justify-center mb-3 group-hover:bg-violet-100 transition-colors">
+              <History size={20} className="text-violet-600" />
             </div>
-            <p className="text-sm font-semibold text-slate-800 mb-1">Calendar</p>
-            <p className="text-xs text-slate-400">Upcoming events</p>
+            <p className="text-sm font-semibold text-slate-800 mb-1">Messages</p>
+            <p className="text-xs text-slate-400">Chat with teachers</p>
           </Link>
         </div>
       </div>

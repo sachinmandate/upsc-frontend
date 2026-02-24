@@ -15,7 +15,13 @@ const Login = () => {
     e.preventDefault();
     const role = email.trim().toLowerCase() === "teacher" ? "teacher" : "student";
     login({ role, email: email.trim() || "student" });
-    navigate(role === "teacher" ? "/dashboard/teacher" : "/dashboard/student");
+
+    if (role === "teacher") {
+      navigate("/dashboard/teacher");
+    } else {
+      const hasSelectedSubjects = localStorage.getItem("selectedSubjects");
+      navigate(hasSelectedSubjects ? "/dashboard/student" : "/onboarding/subjects");
+    }
   };
 
   return (

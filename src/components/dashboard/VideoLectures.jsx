@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { videoLectures, subjects } from "../../data/dashboardData";
+import { videoLectures } from "../../data/dashboardData";
+import ContentBadge from "../common/ContentBadge";
 import {
-  Video,
   Play,
-  Clock,
   User,
-  Filter,
   CheckCircle2,
 } from "lucide-react";
 
@@ -26,7 +24,6 @@ const VideoLectures = () => {
   );
 
   const continueWatching = videoLectures.filter((v) => v.progress > 0 && v.progress < 100);
-  const completed = videoLectures.filter((v) => v.progress === 100);
 
   return (
     <div className="space-y-6">
@@ -53,6 +50,10 @@ const VideoLectures = () => {
                 >
                   <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/90 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                     <Play size={20} className="text-slate-800 ml-1" />
+                  </div>
+                  {/* Tier badge */}
+                  <div className="absolute top-2 left-2">
+                    <ContentBadge tier={video.tier} />
                   </div>
                   <span className="absolute bottom-2 right-2 text-[10px] font-bold bg-black/70 text-white px-2 py-0.5">
                     {video.duration}
@@ -83,6 +84,11 @@ const VideoLectures = () => {
                     </span>
                     <span className="shrink-0">{video.progress}% done</span>
                   </div>
+                  {video.resumeTimestamp && (
+                    <p className="text-[10px] font-semibold text-amber-600 mt-1.5">
+                      Resume at {video.resumeTimestamp}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
@@ -142,6 +148,10 @@ const VideoLectures = () => {
                     <Play size={20} className="text-slate-800 ml-1" />
                   </div>
                 )}
+                {/* Tier badge */}
+                <div className="absolute top-2 left-2">
+                  <ContentBadge tier={video.tier} />
+                </div>
                 <span className="absolute bottom-2 right-2 text-[10px] font-bold bg-black/70 text-white px-2 py-0.5">
                   {video.duration}
                 </span>
@@ -177,6 +187,11 @@ const VideoLectures = () => {
                     <span className="text-green-600 font-semibold shrink-0 ml-2">Completed</span>
                   )}
                 </div>
+                {video.resumeTimestamp && video.progress > 0 && video.progress < 100 && (
+                  <p className="text-[10px] font-semibold text-amber-600 mt-1.5">
+                    Resume at {video.resumeTimestamp}
+                  </p>
+                )}
               </div>
             </div>
           ))}

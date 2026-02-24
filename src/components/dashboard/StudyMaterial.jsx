@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { subjects, recentMaterials } from "../../data/dashboardData";
+import { subjects, recentMaterials, studyNotes } from "../../data/dashboardData";
+import ContentBadge from "../common/ContentBadge";
 import {
   BookOpen,
   Download,
@@ -7,30 +8,14 @@ import {
   FileText,
   Filter,
   ChevronRight,
+  Lock,
 } from "lucide-react";
-
-const allNotes = [
-  { id: 1, title: "Preamble & Constitutional Framework", subject: "Indian Polity", pages: 24, size: "2.4 MB" },
-  { id: 2, title: "Fundamental Rights – Article 14 to 32", subject: "Indian Polity", pages: 32, size: "3.1 MB" },
-  { id: 3, title: "Directive Principles of State Policy", subject: "Indian Polity", pages: 18, size: "1.8 MB" },
-  { id: 4, title: "Ancient India – Indus Valley Civilization", subject: "History", pages: 28, size: "2.7 MB" },
-  { id: 5, title: "Medieval India – Mughal Empire", subject: "History", pages: 35, size: "3.5 MB" },
-  { id: 6, title: "Indian National Movement – Phase I & II", subject: "History", pages: 40, size: "4.0 MB" },
-  { id: 7, title: "National Income & GDP Concepts", subject: "Economy", pages: 22, size: "2.2 MB" },
-  { id: 8, title: "Monetary Policy & RBI Functions", subject: "Economy", pages: 26, size: "2.6 MB" },
-  { id: 9, title: "Physical Geography – Geomorphology", subject: "Geography", pages: 30, size: "3.0 MB" },
-  { id: 10, title: "Climatology – Indian Monsoon System", subject: "Geography", pages: 25, size: "2.5 MB" },
-  { id: 11, title: "Ecology & Biodiversity", subject: "Environment", pages: 20, size: "2.0 MB" },
-  { id: 12, title: "Climate Change & International Agreements", subject: "Environment", pages: 16, size: "1.6 MB" },
-  { id: 13, title: "Logical Reasoning & Analytical Ability", subject: "CSAT", pages: 35, size: "3.2 MB" },
-  { id: 14, title: "Data Interpretation", subject: "CSAT", pages: 28, size: "2.8 MB" },
-];
 
 const StudyMaterial = () => {
   const [selectedSubject, setSelectedSubject] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredNotes = allNotes.filter((note) => {
+  const filteredNotes = studyNotes.filter((note) => {
     const matchesSubject = selectedSubject === "All" || note.subject === selectedSubject;
     const matchesSearch = note.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSubject && matchesSearch;
@@ -144,15 +129,25 @@ const StudyMaterial = () => {
                   <FileText size={18} className="text-slate-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 truncate">{note.title}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium text-slate-800 truncate">{note.title}</p>
+                    <ContentBadge tier={note.tier} />
+                  </div>
                   <p className="text-xs text-slate-400 mt-0.5">
                     {note.subject} &middot; {note.pages} pages &middot; {note.size}
                   </p>
                 </div>
-                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shrink-0 rounded-sm">
-                  <Download size={13} />
-                  <span className="hidden sm:inline">Download</span>
-                </button>
+                {note.tier === "premium" ? (
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-all shrink-0 rounded-sm">
+                    <Lock size={13} />
+                    <span className="hidden sm:inline">Unlock</span>
+                  </button>
+                ) : (
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shrink-0 rounded-sm">
+                    <Download size={13} />
+                    <span className="hidden sm:inline">Download</span>
+                  </button>
+                )}
               </div>
             ))}
           </div>

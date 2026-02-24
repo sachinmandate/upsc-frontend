@@ -18,17 +18,23 @@ import {
   Menu,
   X,
   Landmark,
+  History,
+  MessageSquare,
+  CreditCard,
 } from "lucide-react";
 
 const sidebarLinks = [
   { to: "/dashboard/student", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/dashboard/student/notes", icon: BookOpen, label: "Notes" },
   { to: "/dashboard/student/videos", icon: Video, label: "Videos" },
+  { to: "/dashboard/student/watch-history", icon: History, label: "Watch History" },
   { to: "/dashboard/student/assignments", icon: ClipboardList, label: "Assignments" },
   { to: "/dashboard/student/mock-tests", icon: FileCheck, label: "Mock Tests" },
   { to: "/dashboard/student/planner", icon: ListTodo, label: "Planner" },
   { to: "/dashboard/student/calendar", icon: CalendarDays, label: "Calendar" },
   { to: "/dashboard/student/analytics", icon: BarChart3, label: "Analytics" },
+  { to: "/dashboard/student/chat", icon: MessageSquare, label: "Chat" },
+  { to: "/dashboard/student/payments", icon: CreditCard, label: "Payments" },
   { to: "/dashboard/student/profile", icon: UserCircle, label: "Profile" },
 ];
 
