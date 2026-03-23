@@ -66,7 +66,10 @@ const SubjectsPage = ({ classesList }) => {
   const fetchChapters = async (subjectId) => {
     try {
       const data = await teacherApi.fetchMyChapters();
-      const filtered = data.filter(c => c.subjectId === subjectId);
+      const filtered = Array.isArray(data) ? data.filter(c => {
+        const cSubId = c.subject ? c.subject.id : c.subjectId;
+        return cSubId === subjectId;
+      }) : [];
       setChaptersList(filtered);
     } catch (err) {
       toast.error("Error fetching chapters");
@@ -151,7 +154,9 @@ const SubjectsPage = ({ classesList }) => {
       title: assignmentTitle,
       description: assignmentDesc,
       dueDate: assignmentDueDate,
-      chapterId: selectedChapter.id
+      chapterId: selectedChapter.id,
+      classId: selectedClass?.id,
+      subjectId: selectedSubject?.id
     });
     if (res) {
       toast.success("Assignment created");

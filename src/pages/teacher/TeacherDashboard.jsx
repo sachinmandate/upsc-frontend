@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import AppLayout from '../../components/layout/Teacher.AppLayout';
 import TeacherHome from './TeacherHome';
 import StudentsPage from './StudentsPage';
@@ -25,6 +25,10 @@ const TeacherDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    console.log("Chapters = ", chapters)
+  }, [chapters])
 
   const fetchDashboardData = async () => {
     setLoading(true);

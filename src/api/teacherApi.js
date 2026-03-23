@@ -259,3 +259,25 @@ export const fetchNotesByChapter = async (chapterId) => {
         return [];
     }
 };
+
+export const createAssignment = async (assignmentData) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/assignments`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify(assignmentData)
+        });
+        return { success: response.ok };
+    } catch (error) {
+        return null;
+    }
+};
+
+export const fetchAssignments = async (chapterId) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/assignments/chapter/${chapterId}`, { headers: getHeaders() });
+        return await response.json();
+    } catch (error) {
+        return [];
+    }
+};
