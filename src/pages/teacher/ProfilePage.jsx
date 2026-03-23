@@ -3,8 +3,13 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/commo
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { Mail, Phone, MapPin, Calendar, Shield } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const ProfilePage = () => {
+  const { user } = useAuth();
+
+  if (!user) return null;
+
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
@@ -15,31 +20,33 @@ const ProfilePage = () => {
       <Card>
         <CardContent className="py-8">
           <div className="flex items-start gap-6">
-            <div className="h-20 w-20 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl font-bold text-white">YB</span>
+            <div className="h-20 w-20 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0 uppercase">
+              <span className="text-2xl font-bold text-white">
+                {(user.firstName?.[0] || 'T') + (user.lastName?.[0] || '')}
+              </span>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-3">
-                <h3 className="text-xl font-bold text-gray-900">Yashwant Bhosale</h3>
+                <h3 className="text-xl font-bold text-gray-900">{user.firstName} {user.lastName}</h3>
                 <Badge variant="success">Active</Badge>
               </div>
-              <p className="text-sm text-gray-500 mt-1">Senior Teacher — Department of Computer Science</p>
+              <p className="text-sm text-gray-500 mt-1">Teacher Account — Standard Pricing Member</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Mail className="h-4 w-4" />
-                  yashwant.b@example.com
+                  {user.email}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Phone className="h-4 w-4" />
-                  +91 98765 43210
+                  {user.mobileNumber || "Not provided"}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <MapPin className="h-4 w-4" />
-                  Pune, Maharashtra
+                  {user.city || "N/A"}, {user.state || user.district || "India"}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Calendar className="h-4 w-4" />
-                  Joined March 2024
+                  Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'March 2024'}
                 </div>
               </div>
             </div>

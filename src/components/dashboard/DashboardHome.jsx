@@ -1,13 +1,7 @@
 import { Link } from "react-router-dom";
-import {
-  studentProfile,
-  motivationalQuotes,
-  subjects,
-  recentMaterials,
-  assignments,
-  dailyTasks,
-  mockTestScores,
-} from "../../data/dashboardData";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { studentApi } from "../../api/studentApi";
 import {
   BookOpen,
   ClipboardList,
@@ -21,12 +15,73 @@ import {
   FileText,
 } from "lucide-react";
 
+const motivationalQuotes = [
+  "Success in civil services is not luck — it is discipline meeting consistency.",
+  "A year of focused preparation is worth more than a decade of wishful thinking.",
+  "The IAS officer you admire was once a student just like you — start today.",
+  "Discipline is choosing between what you want now and what you want most.",
+  "Every page you read today brings you one step closer to serving the nation.",
+];
+
 const quote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
 
 const DashboardHome = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [assignments, setAssignments] = useState([]);
+  const [dailyTasks, setDailyTasks] = useState([]);
+  const [recentMaterials, setRecentMaterials] = useState([]);
+  const [mockTestScores, setMockTestScores] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [dashboard, groupsData, materialsData, scoresData] = await Promise.all([
+        studentApi.fetchDashboard().catch(() => ({})),
+        studentApi.fetchEnrolledGroups().catch(() => []),
+        studentApi.fetchAnnouncements().catch(() => []),
+        studentApi.fetchRecentMaterials().catch(() => []), 
+      ]);
+
+      setDashboardData(dashboard);
+      setAssignments([]); // To be implemented
+      setDailyTasks([]); // Mocked
+      setRecentMaterials(Array.isArray(materialsData) ? materialsData : []);
+      setMockTestScores(Array.isArray(scoresData) ? scoresData : []);
+      setSubjects(Array.isArray(groupsData) ? groupsData : []);
+    } catch (error) {
+      console.error("Error loading dashboard:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const studentProfile = {
+    name: `${dashboardData?.firstName || ""} ${dashboardData?.lastName || ""}`.trim() || user?.firstName || "Student",
+    firstName: dashboardData?.firstName || user?.firstName || "Student",
+    examTarget: dashboardData?.examTarget || user?.examTarget || "UPSC / MPSC",
+    syllabusCompleted: dashboardData?.overallProgress || 0,
+  };
+
   const pendingAssignments = assignments.filter((a) => a.status === "pending" || a.status === "overdue").length;
   const completedTasks = dailyTasks.filter((t) => t.completed).length;
-  const latestScore = mockTestScores[mockTestScores.length - 1];
+  const latestScore = mockTestScores?.[mockTestScores.length - 1] || { percentage: 0 };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+        <div className="w-12 h-12 bg-slate-100 rounded-full mb-4"></div>
+        <div className="h-4 w-48 bg-slate-100 rounded mb-2"></div>
+        <div className="h-3 w-32 bg-slate-50 rounded"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -38,7 +93,7 @@ const DashboardHome = () => {
               {studentProfile.examTarget}
             </p>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">
-              Welcome, {studentProfile.name.split(" ")[0]}
+              Welcome, {studentProfile.firstName}
             </h1>
             <p className="text-slate-500 text-sm italic leading-relaxed max-w-xl">
               "{quote}"
@@ -78,7 +133,7 @@ const DashboardHome = () => {
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Target</p>
                 <p className="text-sm font-semibold text-slate-800">{studentProfile.examTarget}</p>
-                <p className="text-xs text-slate-500">{studentProfile.attempt}</p>
+                <p className="text-xs text-slate-500">{studentProfile.attempt || "—"}</p>
               </div>
             </div>
           </div>
@@ -128,7 +183,7 @@ const DashboardHome = () => {
             <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Last Test</p>
           </div>
           <p className="text-xl sm:text-2xl font-bold text-slate-900">{latestScore.percentage}%</p>
-          <p className="text-xs text-slate-500 mt-1 truncate">{latestScore.name.split(" – ")[0]}</p>
+          <p className="text-xs text-slate-500 mt-1 truncate">{latestScore.name || "—"}</p>
         </div>
       </div>
 
@@ -147,7 +202,11 @@ const DashboardHome = () => {
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             {subjects.slice(0, 6).map((subject) => (
-              <div key={subject.id} className="flex items-center gap-3">
+              <Link
+                key={subject.id}
+                to={`/dashboard/student/course/${subject.id}`}
+                className="flex items-center gap-3 p-2 hover:bg-slate-50 transition-colors group"
+              >
                 <div
                   className="w-9 h-9 flex items-center justify-center shrink-0"
                   style={{ backgroundColor: subject.color + "15" }}
@@ -156,7 +215,7 @@ const DashboardHome = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-medium text-slate-800 truncate">{subject.name}</p>
+                    <p className="text-sm font-medium text-slate-800 truncate group-hover:text-slate-900">{subject.name}</p>
                     <p className="text-xs font-semibold text-slate-500 ml-2 shrink-0">{subject.progress}%</p>
                   </div>
                   <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -166,7 +225,7 @@ const DashboardHome = () => {
                     />
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

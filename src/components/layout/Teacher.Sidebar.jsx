@@ -1,10 +1,12 @@
 import React from 'react';
-import { Home, Users, BookOpen, UserCircle, LogOut } from 'lucide-react';
+import { Home, Users, BookOpen, UserCircle, LogOut, Bell, Layers } from 'lucide-react';
 
 const navItems = [
   { key: 'home', label: 'Home', icon: Home },
   { key: 'students', label: 'Students', icon: Users },
+  { key: 'groups', label: 'Student Groups', icon: Layers },
   { key: 'subjects', label: 'Classes & Subjects', icon: BookOpen },
+  { key: 'announcements', label: 'Announcements', icon: Bell },
   { key: 'profile', label: 'Profile', icon: UserCircle },
 ];
 
@@ -23,11 +25,10 @@ const Sidebar = ({ activeKey, onNavigate }) => {
               <button
                 key={key}
                 onClick={() => onNavigate(key)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive
+                  ? 'bg-gray-900 text-white'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
               >
                 <Icon className="h-4 w-4" />
                 {label}

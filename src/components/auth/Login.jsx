@@ -3,18 +3,35 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../layout/Navbar";
 import { Mail, Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    login({ role: "student", email: email.trim() || "student" });
-    navigate("/dashboard/student");
+
+    if (!email || !password) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+
+    setLoading(true);
+
+    const result = await login(email, password, 'student');
+
+    if (result.success) {
+      toast.success("Login successful!");
+      navigate("/dashboard/student");
+    } else {
+      toast.error(result.message);
+    }
+    setLoading(false);
   };
 
   return (
@@ -64,6 +81,7 @@ const Login = () => {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -91,6 +109,7 @@ const Login = () => {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
                 />
                 <button
                   type="button"
@@ -118,9 +137,10 @@ const Login = () => {
 
             <button
               type="submit"
-              className="w-full h-11 bg-slate-900 text-white text-sm font-semibold rounded-md hover:bg-slate-800 active:scale-[0.98] transition-all"
+              disabled={loading}
+              className="w-full h-11 bg-slate-900 text-white text-sm font-semibold rounded-md hover:bg-slate-800 active:scale-[0.98] transition-all disabled:opacity-70"
             >
-              Sign In
+              {loading ? "Signing In..." : "Sign In"}
             </button>
 
             <div className="relative my-6 text-center">

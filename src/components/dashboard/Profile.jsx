@@ -1,5 +1,6 @@
-import { studentProfile, subjects } from "../../data/dashboardData";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { studentApi } from "../../api/studentApi";
 import {
   User,
   Mail,
@@ -13,6 +14,42 @@ import {
 
 const Profile = () => {
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
+  const [subjects, setSubjects] = useState([]);
+
+  useEffect(() => {
+    loadProfileData();
+  }, []);
+
+  const loadProfileData = async () => {
+    setLoading(true);
+    try {
+      const [profileData, subjectsData] = await Promise.all([
+        studentApi.fetchDashboard().catch(() => ({})),
+        studentApi.fetchEnrolledGroups().catch(() => []),
+      ]);
+      setProfile(profileData);
+      setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
+    } catch (error) {
+      console.error("Error loading profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const studentProfile = {
+    name: `${profile?.firstName || ""} ${profile?.lastName || ""}`.trim() || user?.name || "Student",
+    firstName: profile?.firstName || user?.firstName || "Student",
+    email: user?.email || profile?.email || "",
+    phone: profile?.phone || user?.phone || "—",
+    examTarget: profile?.examTarget || user?.examTarget || "UPSC / MPSC",
+    optionalSubject: profile?.optionalSubject || "—",
+    attempt: profile?.attempt || "—",
+    joinedDate: profile?.createdAt || "—",
+    syllabusCompleted: profile?.overallProgress || 0,
+    avatarInitials: (profile?.firstName?.[0] || "") + (profile?.lastName?.[0] || "") || "ST",
+  };
 
   const infoRows = [
     { icon: Mail, label: "Email", value: user?.email || studentProfile.email },
@@ -22,6 +59,10 @@ const Profile = () => {
     { icon: Award, label: "Attempt", value: studentProfile.attempt },
     { icon: Calendar, label: "Member Since", value: studentProfile.joinedDate },
   ];
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-12">Loading profile...</div>;
+  }
 
   return (
     <div className="space-y-6">

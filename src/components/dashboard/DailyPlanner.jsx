@@ -11,9 +11,10 @@ import {
 } from "lucide-react";
 
 const DailyPlanner = () => {
-  const [tasks, setTasks] = useState(dailyTasks);
+  const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [newPriority, setNewPriority] = useState("medium");
+  const [studyHours, setStudyHours] = useState([]);
 
   const toggleTask = (id) => {
     setTasks(tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
@@ -40,9 +41,9 @@ const DailyPlanner = () => {
   };
 
   const completedCount = tasks.filter((t) => t.completed).length;
-  const totalHours = studyHours.reduce((sum, d) => sum + d.hours, 0);
-  const avgHours = (totalHours / studyHours.length).toFixed(1);
-  const maxHours = Math.max(...studyHours.map((d) => d.hours));
+  const totalHours = studyHours.length > 0 ? studyHours.reduce((sum, d) => sum + (d.hours || 0), 0) : 0;
+  const avgHours = studyHours.length > 0 ? (totalHours / studyHours.length).toFixed(1) : "0.0";
+  const maxHours = studyHours.length > 0 ? Math.max(...studyHours.map((d) => d.hours || 0)) : 10;
 
   const priorityColors = {
     high: "bg-red-100 text-red-700",
@@ -81,7 +82,7 @@ const DailyPlanner = () => {
             <Flame size={16} className="text-orange-500" />
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Streak</p>
           </div>
-          <p className="text-2xl font-bold text-slate-900">7</p>
+          <p className="text-2xl font-bold text-slate-900">0</p>
           <p className="text-xs text-slate-500 mt-0.5">days active</p>
         </div>
       </div>
@@ -130,9 +131,9 @@ const DailyPlanner = () => {
           {/* Task list */}
           <div className="divide-y divide-slate-50">
             {tasks.length === 0 ? (
-              <div className="p-8 sm:p-12 text-center">
-                <CheckCircle2 size={32} className="text-slate-200 mx-auto mb-3" />
-                <p className="text-sm text-slate-400">No tasks yet. Add one above to get started.</p>
+              <div className="p-8 sm:p-12 text-center text-slate-400 flex flex-col items-center">
+                <CheckCircle2 size={32} className="opacity-20 mb-2" />
+                <p className="text-sm">No tasks yet. Add one above to get started.</p>
               </div>
             ) : (
               tasks.map((task) => (
@@ -181,34 +182,44 @@ const DailyPlanner = () => {
         {/* Study Hour Tracker */}
         <div className="bg-white border border-slate-200 shadow-sm p-5 sm:p-6 h-fit">
           <h2 className="text-base font-bold text-slate-900 mb-4">Study Hours — This Week</h2>
-          <div className="space-y-3">
-            {studyHours.map((day) => (
-              <div key={day.day} className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-slate-500 w-8 shrink-0">{day.day}</span>
-                <div className="flex-1 h-5 bg-slate-100 rounded-sm overflow-hidden">
-                  <div
-                    className="h-full rounded-sm transition-all"
-                    style={{
-                      width: `${(day.hours / maxHours) * 100}%`,
-                      backgroundColor: day.hours >= 8 ? "#059669" : day.hours >= 6 ? "#d97706" : "#dc2626",
-                    }}
-                  />
-                </div>
-                <span className="text-xs font-semibold text-slate-600 w-8 text-right shrink-0">{day.hours}h</span>
+          
+          {studyHours.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 flex flex-col items-center">
+              <Clock size={32} className="opacity-20 mb-2" />
+              <p className="text-sm">No study records yet.</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3">
+                {studyHours.map((day) => (
+                  <div key={day.day} className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-slate-500 w-8 shrink-0">{day.day}</span>
+                    <div className="flex-1 h-5 bg-slate-100 rounded-sm overflow-hidden">
+                      <div
+                        className="h-full rounded-sm transition-all"
+                        style={{
+                          width: `${(day.hours / maxHours) * 100}%`,
+                          backgroundColor: day.hours >= 8 ? "#059669" : day.hours >= 6 ? "#d97706" : "#dc2626",
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-600 w-8 text-right shrink-0">{day.hours}h</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-100">
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-400">Total this week</span>
-              <span className="font-bold text-slate-800">{totalHours}h</span>
-            </div>
-            <div className="flex justify-between text-xs mt-1">
-              <span className="text-slate-400">Daily average</span>
-              <span className="font-bold text-slate-800">{avgHours}h</span>
-            </div>
-          </div>
+              <div className="mt-6 pt-4 border-t border-slate-100">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Total this week</span>
+                  <span className="font-bold text-slate-800">{totalHours}h</span>
+                </div>
+                <div className="flex justify-between text-xs mt-1">
+                  <span className="text-slate-400">Daily average</span>
+                  <span className="font-bold text-slate-800">{avgHours}h</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   Landmark,
+  Crown,
 } from "lucide-react";
 
 const sidebarLinks = [
@@ -29,6 +30,7 @@ const sidebarLinks = [
   { to: "/dashboard/student/planner", icon: ListTodo, label: "Planner" },
   { to: "/dashboard/student/calendar", icon: CalendarDays, label: "Calendar" },
   { to: "/dashboard/student/analytics", icon: BarChart3, label: "Analytics" },
+  { to: "/dashboard/student/subscriptions", icon: Crown, label: "Subscriptions" },
   { to: "/dashboard/student/profile", icon: UserCircle, label: "Profile" },
 ];
 

@@ -5,7 +5,9 @@ import Navbar from './Teacher.Navbar';
 const pageTitles = {
   home: 'Dashboard',
   students: 'Students',
+  groups: 'Student Groups',
   subjects: 'Classes & Subjects',
+  announcements: 'Announcements',
   profile: 'Profile',
 };
 

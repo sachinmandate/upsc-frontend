@@ -1,93 +1,93 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '../../components/layout/Teacher.AppLayout';
 import TeacherHome from './TeacherHome';
 import StudentsPage from './StudentsPage';
+import GroupsPage from './GroupsPage';
 import SubjectsPage from './SubjectsPage';
 import ProfilePage from './ProfilePage';
-import API_CONFIG from '../../config/api';
+import AnnouncementsPage from './AnnouncementsPage';
+import { toast } from 'sonner';
+import * as teacherApi from '../../api/teacherApi';
 
-const HomePage = TeacherHome; // bad code! will refactor later
+const HomePage = TeacherHome;
 
 const TeacherDashboard = () => {
   const [activePage, setActivePage] = useState('home');
+  const [loading, setLoading] = useState(true);
 
-  const [subjects, setSubjects] = useState([
-    { id: 1, name: 'Mathematics', description: 'Advanced mathematics topics including algebra, calculus, and geometry' },
-    { id: 2, name: 'Physics', description: 'Classical and modern physics concepts' },
-    { id: 3, name: 'Computer Science', description: 'Programming, algorithms, and data structures' },
-  ]);
+  // Stats from /api/teacher/dashboard
+  const [dashboardStats, setDashboardStats] = useState(null);
 
-  const [chapters, setChapters] = useState([
-    {
-      id: 1,
-      subjectId: 1,
-      title: 'Linear Algebra Fundamentals',
-      description: 'Introduction to matrices, determinants, and vector spaces',
-      videoUrl: 'https://youtube.com/watch?v=example1',
-    },
-    {
-      id: 2,
-      subjectId: 1,
-      title: 'Calculus Basics',
-      description: 'Limits, derivatives, and their applications',
-      videoUrl: 'https://youtube.com/watch?v=example2',
-    },
-    {
-      id: 3,
-      subjectId: 2,
-      title: 'Newtons Laws of Motion',
-      description: 'Understanding force, mass, and acceleration',
-      videoUrl: 'https://youtube.com/watch?v=example3',
-    },
-  ]);
+  const [classesList, setClassesList] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [chapters, setChapters] = useState([]);
 
-  const handleSubjectCreated = (subject) => {
-    setSubjects((prev) => [...prev, { ...subject, id: Date.now() }]);
-  };
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const handleChapterCreated = (chapter) => {
-    setChapters((prev) => [...prev, { ...chapter, id: Date.now() }]);
-  };
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [stats, classes, mySubjects, myChapters] = await Promise.all([
+        teacherApi.fetchDashboardStats(),
+        teacherApi.fetchMyClasses(),
+        teacherApi.fetchMySubjects(),
+        teacherApi.fetchMyChapters()
+      ]);
 
-  const handleChapterDelete = async (chapterId) => {
-    const endpoint = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CHAPTER.DELETE.replace(':id', chapterId)}`;
-    console.log('Delete chapter:', chapterId, 'Endpoint:', endpoint);
-    setChapters((prev) => prev.filter((c) => c.id !== chapterId));
-  };
+      if (stats) setDashboardStats(stats);
+      setClassesList(Array.isArray(classes) ? classes : []);
+      setSubjects(Array.isArray(mySubjects) ? mySubjects : []);
+      setChapters(Array.isArray(myChapters) ? myChapters : []);
 
-  const handleAssignmentCreated = (assignment) => {
-    console.log('Assignment created:', assignment);
+    } catch (error) {
+      console.error("Dashboard error:", error);
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleNavigate = (page) => {
     if (page === 'logout') {
       console.log('Logging out...');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      window.location.href = '/teacher/login';
       return;
     }
     setActivePage(page);
   };
 
+  if (loading) {
+    return (
+      <AppLayout activeKey={activePage} onNavigate={handleNavigate}>
+        <div className="flex h-screen items-center justify-center">Loading dashboard...</div>
+      </AppLayout>
+    );
+  }
+
   const renderPage = () => {
     switch (activePage) {
       case 'home':
-        return <HomePage subjects={subjects} chapters={chapters} onNavigate={handleNavigate} />;
+        return <HomePage dashboardStats={dashboardStats} subjects={subjects} chapters={chapters} onNavigate={handleNavigate} />;
       case 'students':
         return <StudentsPage />;
+      case 'groups':
+        return <GroupsPage />;
       case 'subjects':
         return (
           <SubjectsPage
-            subjects={subjects}
-            chapters={chapters}
-            onSubjectCreated={handleSubjectCreated}
-            onChapterCreated={handleChapterCreated}
-            onChapterDelete={handleChapterDelete}
-            onAssignmentCreated={handleAssignmentCreated}
+            classesList={classesList}
           />
         );
+      case 'announcements':
+        return <AnnouncementsPage dashboardStats={dashboardStats} classesList={classesList} />;
       case 'profile':
         return <ProfilePage />;
       default:
-        return <HomePage subjects={subjects} chapters={chapters} onNavigate={handleNavigate} />;
+        return <HomePage dashboardStats={dashboardStats} subjects={subjects} chapters={chapters} onNavigate={handleNavigate} />;
     }
   };
 

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { subjects, recentMaterials } from "../../data/dashboardData";
+import { useState, useEffect } from "react";
+import { studentApi } from "../../api/studentApi";
 import {
   BookOpen,
   Download,
@@ -9,32 +9,68 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const allNotes = [
-  { id: 1, title: "Preamble & Constitutional Framework", subject: "Indian Polity", pages: 24, size: "2.4 MB" },
-  { id: 2, title: "Fundamental Rights – Article 14 to 32", subject: "Indian Polity", pages: 32, size: "3.1 MB" },
-  { id: 3, title: "Directive Principles of State Policy", subject: "Indian Polity", pages: 18, size: "1.8 MB" },
-  { id: 4, title: "Ancient India – Indus Valley Civilization", subject: "History", pages: 28, size: "2.7 MB" },
-  { id: 5, title: "Medieval India – Mughal Empire", subject: "History", pages: 35, size: "3.5 MB" },
-  { id: 6, title: "Indian National Movement – Phase I & II", subject: "History", pages: 40, size: "4.0 MB" },
-  { id: 7, title: "National Income & GDP Concepts", subject: "Economy", pages: 22, size: "2.2 MB" },
-  { id: 8, title: "Monetary Policy & RBI Functions", subject: "Economy", pages: 26, size: "2.6 MB" },
-  { id: 9, title: "Physical Geography – Geomorphology", subject: "Geography", pages: 30, size: "3.0 MB" },
-  { id: 10, title: "Climatology – Indian Monsoon System", subject: "Geography", pages: 25, size: "2.5 MB" },
-  { id: 11, title: "Ecology & Biodiversity", subject: "Environment", pages: 20, size: "2.0 MB" },
-  { id: 12, title: "Climate Change & International Agreements", subject: "Environment", pages: 16, size: "1.6 MB" },
-  { id: 13, title: "Logical Reasoning & Analytical Ability", subject: "CSAT", pages: 35, size: "3.2 MB" },
-  { id: 14, title: "Data Interpretation", subject: "CSAT", pages: 28, size: "2.8 MB" },
-];
-
 const StudyMaterial = () => {
+  const [subjects, setSubjects] = useState([]);
+  const [recentNotes, setRecentNotes] = useState([]);
+  const [allNotes, setAllNotes] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [groupsData, materialsData] = await Promise.all([
+        studentApi.fetchEnrolledGroups().catch(() => []),
+        studentApi.fetchRecentMaterials().catch(() => [])
+      ]);
+      setSubjects(groupsData);
+      setRecentNotes(materialsData);
+      // allNotes can be populated from the selected subject's notes
+      setAllNotes([]); 
+    } catch (error) {
+      console.error("Error loading study material:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchNotes = async (subjectId) => {
+    try {
+      const notesData = await studentApi.fetchNotesBySubject(subjectId);
+      setAllNotes(notesData);
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Find subject ID by name if needed, or update subjects state to include ID
+    const subject = subjects.find(s => s.name === selectedSubject);
+    if (subject) {
+      fetchNotes(subject.id);
+    } else if (selectedSubject === "All") {
+      setAllNotes([]);
+    }
+  }, [selectedSubject, subjects]);
 
   const filteredNotes = allNotes.filter((note) => {
-    const matchesSubject = selectedSubject === "All" || note.subject === selectedSubject;
     const matchesSearch = note.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSubject && matchesSearch;
+    return matchesSearch;
   });
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+        <div className="w-12 h-12 bg-slate-100 rounded-full mb-4"></div>
+        <div className="h-4 w-48 bg-slate-100 rounded"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -58,16 +94,16 @@ const StudyMaterial = () => {
           >
             <div
               className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center mb-2 sm:mb-3"
-              style={{ backgroundColor: subject.color + "15" }}
+              style={{ backgroundColor: (subject.color || "#1e293b") + "15" }}
             >
-              <BookOpen size={14} style={{ color: subject.color }} />
+              <BookOpen size={14} style={{ color: subject.color || "#1e293b" }} />
             </div>
             <p className="text-xs sm:text-sm font-semibold text-slate-800 mb-0.5 truncate">{subject.name}</p>
-            <p className="text-[10px] sm:text-xs text-slate-400">{subject.totalNotes} notes</p>
+            <p className="text-[10px] sm:text-xs text-slate-400">{subject.totalNotes || 0} notes</p>
             <div className="mt-2 w-full h-1 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full"
-                style={{ width: `${subject.progress}%`, backgroundColor: subject.color }}
+                style={{ width: `${subject.progress || 0}%`, backgroundColor: subject.color || "#1e293b" }}
               />
             </div>
           </button>
@@ -98,26 +134,28 @@ const StudyMaterial = () => {
       </div>
 
       {/* Recently Accessed */}
-      <div className="bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
-        <h2 className="text-base font-bold text-slate-900 mb-4">Recently Accessed</h2>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {recentMaterials.map((material) => (
-            <div
-              key={material.id}
-              className="flex items-center gap-3 p-3 border border-slate-100 hover:border-slate-200 hover:bg-slate-50/50 transition-all cursor-pointer"
-            >
-              <div className="w-9 h-9 bg-amber-50 flex items-center justify-center shrink-0">
-                <FileText size={16} className="text-amber-600" />
+      {recentNotes.length > 0 && (
+        <div className="bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
+          <h2 className="text-base font-bold text-slate-900 mb-4">Recently Accessed</h2>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {recentNotes.map((material) => (
+              <div
+                key={material.id}
+                className="flex items-center gap-3 p-3 border border-slate-100 hover:border-slate-200 hover:bg-slate-50/50 transition-all cursor-pointer"
+              >
+                <div className="w-9 h-9 bg-amber-50 flex items-center justify-center shrink-0">
+                  <FileText size={16} className="text-amber-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800 truncate">{material.title}</p>
+                  <p className="text-xs text-slate-400">{material.subjectName || material.subject} &middot; {material.date || "Today"}</p>
+                </div>
+                <ChevronRight size={14} className="text-slate-300 shrink-0" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-800 truncate">{material.title}</p>
-                <p className="text-xs text-slate-400">{material.subject} &middot; {material.date}</p>
-              </div>
-              <ChevronRight size={14} className="text-slate-300 shrink-0" />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Notes List */}
       <div className="bg-white border border-slate-200 shadow-sm">
@@ -129,9 +167,10 @@ const StudyMaterial = () => {
         </div>
 
         {filteredNotes.length === 0 ? (
-          <div className="p-8 sm:p-12 text-center">
+          <div className="p-12 text-center">
             <FileText size={32} className="text-slate-200 mx-auto mb-3" />
-            <p className="text-sm text-slate-400">No notes found matching your search.</p>
+            <p className="text-sm text-slate-400 font-medium">No notes available</p>
+            <p className="text-xs text-slate-300 mt-1">Check back later for updated study materials.</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
