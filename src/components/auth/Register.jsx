@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import authService from "../../services/authService";
 import Navbar from "../layout/Navbar";
-import { User, Mail, Lock, GraduationCap, Briefcase, ChevronRight, Check, Phone, MapPin, Building, Clock, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Lock, GraduationCap, Briefcase, ChevronRight, Check, Phone, MapPin, Building, Clock, Eye, EyeOff, Loader } from "lucide-react";
 
 const Register = () => {
   const [role, setRole] = useState(null); // null, 'student', 'teacher'
@@ -20,6 +21,8 @@ const Register = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -27,12 +30,38 @@ const Register = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    if (role === 'teacher') {
-      setIsSuccess(true);
-    } else {
-      navigate("/login");
+    setError("");
+    setLoading(true);
+
+    try {
+      // For now, only support student registration
+      if (role === 'teacher') {
+        setIsSuccess(true);
+      } else if (role === 'student') {
+        // Call backend to register student
+        await authService.registerStudent({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          mobile: formData.mobile,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          district: formData.district,
+          taluka: formData.taluka,
+          city: formData.city,
+          organization: formData.organization,
+        });
+
+        // Navigate to login on success
+        navigate("/login");
+      }
+    } catch (err) {
+      setError(err.message || "Registration failed. Please try again.");
+      console.error("Registration error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,6 +169,13 @@ const Register = () => {
               </div>
 
               <form onSubmit={handleRegister} className="space-y-8">
+                {/* Error Message */}
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+
                 {/* 1. Identity Section */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#d97706]">1. Identity & Credentials</h3>
@@ -308,8 +344,19 @@ const Register = () => {
                     </label>
                   </div>
 
-                  <button type="submit" className="btn-primary w-full py-4 text-sm tracking-widest uppercase">
-                    Complete Registration
+                  <button
+                    type="submit"
+                    className="btn-primary w-full py-4 text-sm tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader size={16} className="animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      "Complete Registration"
+                    )}
                   </button>
                 </div>
               </form>
