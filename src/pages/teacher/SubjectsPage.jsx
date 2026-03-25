@@ -6,7 +6,7 @@ import Textarea from '../../components/common/Textarea';
 import Badge from '../../components/common/Badge';
 import { toast } from 'sonner';
 import * as teacherApi from '../../api/teacherApi';
-import { Plus, Video, Trash2, ChevronRight, X, FileText, Layers, BookOpen, Download, Link } from 'lucide-react';
+import { Plus, Video, Trash2, ChevronRight, X, FileText, Layers, BookOpen, Download, Link, Loader2 } from 'lucide-react';
 
 const SubjectsPage = ({ classesList }) => {
   const [activeTab, setActiveTab] = useState('classes');
@@ -37,12 +37,17 @@ const SubjectsPage = ({ classesList }) => {
   const [assignmentDueDate, setAssignmentDueDate] = useState('');
 
   const [videoTitle, setVideoTitle] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
+  const [videoFile, setVideoFile] = useState(null);
   const [videoContentType, setVideoContentType] = useState('FREE');
 
   const [noteTitle, setNoteTitle] = useState('');
+  const [noteFile, setNoteFile] = useState(null);
   const [noteType, setNoteType] = useState('PDF');
   const [noteContentType, setNoteContentType] = useState('FREE');
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
 
   const fetchSubjects = async (classId) => {
     try {
@@ -117,33 +122,39 @@ const SubjectsPage = ({ classesList }) => {
 
   const handleCreateVideo = async (e) => {
     e.preventDefault();
-    if (!videoTitle.trim() || !videoUrl.trim()) return;
-    const res = await teacherApi.uploadVideo({
-      title: videoTitle,
-      videoUrl: videoUrl,
-      contentType: videoContentType,
-      chapterId: selectedChapter.id
-    });
-    if (res) {
-      toast.success("Video added");
-      setVideoTitle(''); setVideoUrl(''); setShowVideoForm(false);
+    if (!videoFile || !selectedChapter) {
+        toast.error("Please select a video file");
+        return;
+    }
+    setIsUploading(true);
+    const res = await teacherApi.uploadVideoFile(videoFile, selectedChapter.id, videoTitle);
+    setIsUploading(false);
+    
+    if (res && res.success) {
+      toast.success("Video uploaded successfully");
+      setVideoTitle(''); setVideoFile(null); setShowVideoForm(false);
       fetchVideos(selectedChapter.id);
+    } else {
+        toast.error(res?.message || "Failed to upload video");
     }
   };
 
   const handleCreateNote = async (e) => {
     e.preventDefault();
-    if (!noteTitle.trim()) return;
-    const res = await teacherApi.uploadNote({
-      title: noteTitle,
-      noteType: noteType,
-      contentType: noteContentType,
-      chapterId: selectedChapter.id
-    });
-    if (res) {
-      toast.success("Note placeholder added");
-      setNoteTitle(''); setShowNoteForm(false);
+    if (!noteFile || !selectedChapter) {
+        toast.error("Please select a note file (PDF/PPT)");
+        return;
+    }
+    setIsUploading(true);
+    const res = await teacherApi.uploadNoteFile(noteFile, selectedChapter.id, noteTitle);
+    setIsUploading(false);
+    
+    if (res && res.success) {
+      toast.success("Note uploaded successfully");
+      setNoteTitle(''); setNoteFile(null); setShowNoteForm(false);
       fetchNotes(selectedChapter.id);
+    } else {
+        toast.error(res?.message || "Failed to upload note");
     }
   };
 
@@ -446,7 +457,10 @@ const SubjectsPage = ({ classesList }) => {
                       <CardContent className="border-b bg-slate-50/50">
                         <form onSubmit={handleCreateVideo} className="space-y-4 py-2">
                           <Input label="Video Title" placeholder="e.g. Overview of Calculus" value={videoTitle} onChange={(e) => setVideoTitle(e.target.value)} required />
-                          <Input label="Video URL" placeholder="YouTube or Video Link" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} required />
+                          <div>
+                              <label className="text-sm font-medium mb-1.5 block">Upload Video File</label>
+                              <input type="file" accept="video/mp4,video/x-m4v,video/*" className="w-full text-sm border-gray-200 border rounded-md p-2" onChange={(e) => setVideoFile(e.target.files[0])} required />
+                          </div>
                           <div className="flex gap-4">
                             <div className="flex-1">
                                 <label className="text-sm font-medium mb-1.5 block">Access Type</label>
@@ -456,7 +470,9 @@ const SubjectsPage = ({ classesList }) => {
                                 </select>
                             </div>
                             <div className="flex-1 flex items-end">
-                                <Button type="submit" className="w-full">Add Video</Button>
+                                <Button type="submit" className="w-full" disabled={isUploading}>
+                                    {isUploading ? <Loader2 size={16} className="animate-spin text-center mx-auto" /> : "Upload Video"}
+                                </Button>
                             </div>
                           </div>
                         </form>
@@ -505,6 +521,10 @@ const SubjectsPage = ({ classesList }) => {
                       <CardContent className="border-b bg-slate-50/50">
                         <form onSubmit={handleCreateNote} className="space-y-4 py-2">
                           <Input label="Note Title" placeholder="e.g. Calculus Formulas PDF" value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} required />
+                          <div>
+                              <label className="text-sm font-medium mb-1.5 block">Upload PDF/PPT File</label>
+                              <input type="file" accept=".pdf,.ppt,.pptx" className="w-full text-sm border-gray-200 border rounded-md p-2" onChange={(e) => setNoteFile(e.target.files[0])} required />
+                          </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-medium mb-1.5 block">File Type</label>
@@ -522,7 +542,9 @@ const SubjectsPage = ({ classesList }) => {
                             </div>
                           </div>
                           <div className="flex justify-end">
-                            <Button type="submit">Add Note Entry</Button>
+                            <Button type="submit" disabled={isUploading}>
+                                {isUploading ? <Loader2 size={16} className="animate-spin text-center mx-auto" /> : "Upload Note"}
+                            </Button>
                           </div>
                         </form>
                       </CardContent>
@@ -531,12 +553,18 @@ const SubjectsPage = ({ classesList }) => {
                       {notesList.length > 0 ? (
                         <div className="divide-y divide-gray-100">
                           {notesList.map(n => (
-                            <div key={n.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                            <div key={n.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
+                                 onClick={() => {
+                                      if (n.fileUrl) {
+                                          setSelectedDocument({ title: n.title, url: n.fileUrl, type: n.noteType });
+                                          setShowDocumentModal(true);
+                                      }
+                                 }}>
                               <div className="flex items-center gap-3">
                                 <div className="bg-emerald-50 p-2 rounded text-emerald-600">
                                   <FileText size={16} />
                                 </div>
-                                <p className="text-sm font-medium text-gray-900">{n.title}</p>
+                                <p className="text-sm font-medium text-gray-900 hover:text-blue-600 hover:underline">{n.title}</p>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline">{n.noteType}</Badge>
@@ -608,6 +636,40 @@ const SubjectsPage = ({ classesList }) => {
               </CardContent>
             </Card>
           )}
+        </div>
+      )}
+
+      {/* Document Preview Modal */}
+      {showDocumentModal && selectedDocument && (
+        <div className="fixed inset-0 bg-black/80 z-[100] flex flex-col items-center justify-center p-4">
+            <div className="w-full max-w-4xl flex justify-between items-center mb-4 px-2">
+                <div className="min-w-0 pr-12">
+                    <h2 className="text-white text-lg font-bold truncate">{selectedDocument.title}</h2>
+                    <p className="text-slate-400 text-xs truncate uppercase tracking-widest">{selectedDocument.type} Document</p>
+                </div>
+                <div className="flex items-center gap-4 absolute top-4 right-4 z-[110]">
+                    <button 
+                        onClick={() => window.open(selectedDocument.url, "_blank")}
+                        className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors shrink-0"
+                    >
+                        <Download size={20} />
+                    </button>
+                    <button 
+                      onClick={() => setShowDocumentModal(false)}
+                      className="w-10 h-10 bg-black/50 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors shrink-0"
+                    >
+                        <X size={24} />
+                    </button>
+                </div>
+            </div>
+            
+            <div className="w-full max-w-4xl h-[75vh] bg-white rounded-lg overflow-hidden shadow-2xl">
+                <iframe 
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(selectedDocument.url)}&embedded=true`} 
+                  className="w-full h-full border-0"
+                  title={selectedDocument.title}
+                />
+            </div>
         </div>
       )}
     </div>

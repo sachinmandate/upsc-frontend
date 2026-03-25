@@ -32,6 +32,8 @@ const CourseView = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [videoProgress, setVideoProgress] = useState(0);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [submissionData, setSubmissionData] = useState({ text: "", file: "" });
@@ -341,28 +343,46 @@ const CourseView = () => {
                           </p>
                         </div>
                       </div>
-                      <button 
-                        onClick={async () => {
-                          if (note.isPaid && !note.isSubscribed) {
-                            toast.error("Premium content. Please subscribe to download.");
-                            return;
-                          }
-                          try {
-                            await studentApi.trackNoteDownload(note.id);
-                            if (note.fileUrl) {
-                              window.open(note.fileUrl, "_blank");
-                            } else {
-                              toast.success("Note download tracked! (No URL provided)");
-                            }
-                          } catch (error) {
-                            toast.error("Failed to download note");
-                          }
-                        }}
-                        className={`btn-secondary py-2 px-4 text-xs flex items-center gap-2 ${note.isPaid && !note.isSubscribed ? 'opacity-50' : ''}`}
-                      >
-                        {note.isPaid && !note.isSubscribed ? <Lock size={14} /> : <Download size={14} />}
-                        Download PDF
-                      </button>
+                      <div className="flex gap-2">
+                          <button 
+                            onClick={async () => {
+                              if (note.isPaid && !note.isSubscribed) {
+                                toast.error("Premium content. Please subscribe to view.");
+                                return;
+                              }
+                              try {
+                                await studentApi.trackNoteDownload(note.id);
+                                if (note.fileUrl) {
+                                  setSelectedDocument({ title: note.title, url: note.fileUrl, type: note.noteType });
+                                  setShowDocumentModal(true);
+                                } else {
+                                  toast.error("No URL provided for this note");
+                                }
+                              } catch (error) {
+                                toast.error("Failed to load note");
+                              }
+                            }}
+                            className={`btn-secondary py-2 px-4 text-xs flex items-center gap-2 ${note.isPaid && !note.isSubscribed ? 'opacity-50' : ''}`}
+                          >
+                            {note.isPaid && !note.isSubscribed ? <Lock size={14} /> : <FileText size={14} />}
+                            Preview PDF
+                          </button>
+                          
+                          <button 
+                            onClick={async () => {
+                              if (note.isPaid && !note.isSubscribed) {
+                                toast.error("Premium content. Please subscribe to download.");
+                                return;
+                              }
+                              if (note.fileUrl) {
+                                window.open(note.fileUrl, "_blank");
+                              }
+                            }}
+                            className={`btn-outline py-2 px-3 text-xs flex items-center gap-2 ${note.isPaid && !note.isSubscribed ? 'opacity-50' : 'text-slate-600'}`}
+                          >
+                            <Download size={14} />
+                          </button>
+                      </div>
                     </div>
                   ))
                 )}
@@ -413,15 +433,15 @@ const CourseView = () => {
 
       {/* Video Modal */}
       {showVideoModal && selectedVideo && (
-        <div className="fixed inset-0 bg-black/98 z-50 flex flex-col items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/98 z-[100] flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-5xl flex justify-between items-center mb-4 px-2">
-                <div className="min-w-0">
+                <div className="min-w-0 pr-12">
                     <h2 className="text-white text-lg font-bold truncate">{selectedVideo.title}</h2>
                     <p className="text-slate-400 text-xs truncate">{selectedVideo.chapterName}</p>
                 </div>
                 <button 
                   onClick={() => setShowVideoModal(false)}
-                  className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors shrink-0"
+                  className="absolute top-4 right-4 z-[110] w-10 h-10 bg-black/50 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors shrink-0"
                 >
                     <X size={24} />
                 </button>
@@ -440,6 +460,40 @@ const CourseView = () => {
             <div className="w-full max-w-5xl mt-6 px-2 text-slate-300">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Description</h3>
                 <p className="text-sm opacity-80 leading-relaxed">{selectedVideo.description}</p>
+            </div>
+        </div>
+      )}
+
+      {/* Document Preview Modal */}
+      {showDocumentModal && selectedDocument && (
+        <div className="fixed inset-0 bg-black/80 z-[100] flex flex-col items-center justify-center p-4">
+            <div className="w-full max-w-4xl flex justify-between items-center mb-4 px-2">
+                <div className="min-w-0 pr-12">
+                    <h2 className="text-white text-lg font-bold truncate">{selectedDocument.title}</h2>
+                    <p className="text-slate-400 text-xs truncate uppercase tracking-widest">{selectedDocument.type} Document</p>
+                </div>
+                <div className="flex items-center gap-4 absolute top-4 right-4 z-[110]">
+                    <button 
+                        onClick={() => window.open(selectedDocument.url, "_blank")}
+                        className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors shrink-0"
+                    >
+                        <Download size={20} />
+                    </button>
+                    <button 
+                      onClick={() => setShowDocumentModal(false)}
+                      className="w-10 h-10 bg-black/50 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors shrink-0"
+                    >
+                        <X size={24} />
+                    </button>
+                </div>
+            </div>
+            
+            <div className="w-full max-w-4xl h-[85vh] bg-white rounded-lg overflow-hidden shadow-2xl">
+                <iframe 
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(selectedDocument.url)}&embedded=true`} 
+                  className="w-full h-full border-0"
+                  title={selectedDocument.title}
+                />
             </div>
         </div>
       )}

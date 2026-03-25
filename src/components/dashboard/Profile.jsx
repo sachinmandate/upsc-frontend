@@ -6,9 +6,8 @@ import {
   Mail,
   Phone,
   Target,
-  BookOpen,
-  Calendar,
-  Award,
+  MapPin,
+  Building,
   Edit3,
   X,
   Loader2,
@@ -80,22 +79,22 @@ const Profile = () => {
     name: `${profile?.firstName || ""} ${profile?.lastName || ""}`.trim() || user?.name || "Student",
     firstName: profile?.firstName || user?.firstName || "Student",
     email: user?.email || profile?.email || "",
-    phone: profile?.phone || user?.phone || "—",
+    mobile: profile?.mobile || user?.mobile || "—",
     examTarget: profile?.examTarget || user?.examTarget || "UPSC / MPSC",
-    optionalSubject: profile?.optionalSubject || "—",
-    attempt: profile?.attempt || "—",
-    joinedDate: profile?.createdAt || "—",
+    city: profile?.city || "—",
+    district: profile?.district || "—",
+    organization: profile?.organization || "—",
     syllabusCompleted: profile?.overallProgress || 0,
     avatarInitials: (profile?.firstName?.[0] || "") + (profile?.lastName?.[0] || "") || "ST",
   };
 
   const infoRows = [
     { icon: Mail, label: "Email", value: user?.email || studentProfile.email },
-    { icon: Phone, label: "Phone", value: studentProfile.phone },
+    { icon: Phone, label: "Mobile", value: studentProfile.mobile },
     { icon: Target, label: "Exam Target", value: studentProfile.examTarget },
-    { icon: BookOpen, label: "Optional Subject", value: studentProfile.optionalSubject },
-    { icon: Award, label: "Attempt", value: studentProfile.attempt },
-    { icon: Calendar, label: "Member Since", value: studentProfile.joinedDate },
+    { icon: MapPin, label: "City", value: studentProfile.city },
+    { icon: MapPin, label: "District", value: studentProfile.district },
+    { icon: Building, label: "Organization", value: studentProfile.organization },
   ];
 
   if (loading) {
@@ -117,10 +116,9 @@ const Profile = () => {
             {studentProfile.avatarInitials}
           </div>
           <h2 className="text-lg font-bold text-slate-900 mb-0.5">{studentProfile.name}</h2>
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-4">
             {studentProfile.examTarget}
           </p>
-          <p className="text-xs text-slate-400">{studentProfile.attempt}</p>
 
           {/* Overall progress */}
           <div className="mt-6 pt-4 border-t border-slate-100">

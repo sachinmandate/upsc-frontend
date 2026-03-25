@@ -8,6 +8,13 @@ const getHeaders = () => {
   };
 };
 
+const getHeadersWithoutContentType = () => {
+  const token = localStorage.getItem("auth_token");
+  return {
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+};
+
 export const fetchDashboardStats = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/dashboard`, { headers: getHeaders() });
@@ -248,6 +255,50 @@ export const uploadNote = async (noteData) => {
         return await response.json();
     } catch (error) {
         return null;
+    }
+};
+
+export const uploadVideoFile = async (file, chapterId, title) => {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("chapterId", chapterId);
+        if (title) formData.append("title", title);
+
+        const response = await fetch(`${API_BASE_URL}/upload/video`, {
+            method: "POST",
+            headers: getHeadersWithoutContentType(),
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (!response.ok || data.success === false) throw new Error(data.message || "Upload failed");
+        return { success: true, ...data };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: error.message };
+    }
+};
+
+export const uploadNoteFile = async (file, chapterId, title) => {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("chapterId", chapterId);
+        if (title) formData.append("title", title);
+
+        const response = await fetch(`${API_BASE_URL}/upload/note`, {
+            method: "POST",
+            headers: getHeadersWithoutContentType(),
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (!response.ok || data.success === false) throw new Error(data.message || "Upload failed");
+        return { success: true, ...data };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: error.message };
     }
 };
 
