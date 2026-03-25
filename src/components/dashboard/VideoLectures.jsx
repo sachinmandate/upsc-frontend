@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { videoLectures } from "../../data/dashboardData";
-import ContentBadge from "../common/ContentBadge";
+import { useState, useEffect } from "react";
+import { studentApi } from "../../api/studentApi";
 import {
   Play,
   User,
@@ -18,12 +17,62 @@ const subjectColors = {
 
 const VideoLectures = () => {
   const [filterSubject, setFilterSubject] = useState("All");
+  const [selectedSubjectId, setSelectedSubjectId] = useState(null);
+  const [videos, setVideos] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = videoLectures.filter(
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedSubjectId) {
+        fetchVideos(selectedSubjectId);
+    }
+  }, [selectedSubjectId]);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const subjectsData = await studentApi.fetchSubjects();
+      setSubjects(subjectsData);
+      
+      if (subjectsData.length > 0 && !selectedSubjectId) {
+          // Default to first subject
+          setSelectedSubjectId(subjectsData[0].id);
+          setFilterSubject(subjectsData[0].name);
+      }
+    } catch (error) {
+      console.error("Error loading subjects:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchVideos = async (subjectId) => {
+      try {
+          const videosData = await studentApi.fetchVideosBySubject(subjectId);
+          setVideos(videosData);
+      } catch (error) {
+          console.error("Error fetching videos:", error);
+      }
+  };
+
+  const filtered = videos.filter(
     (v) => filterSubject === "All" || v.subject === filterSubject
   );
 
-  const continueWatching = videoLectures.filter((v) => v.progress > 0 && v.progress < 100);
+  const continueWatching = videos.filter((v) => v.progress > 0 && v.progress < 100);
+
+  if (loading) {
+      return (
+          <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+              <div className="w-12 h-12 bg-slate-100 rounded-full mb-4"></div>
+              <div className="h-4 w-48 bg-slate-100 rounded"></div>
+          </div>
+      );
+  }
 
   return (
     <div className="space-y-6">
@@ -97,31 +146,39 @@ const VideoLectures = () => {
       )}
 
       {/* Filter */}
-      <div className="flex flex-wrap gap-1.5 sm:gap-2">
-        <button
-          onClick={() => setFilterSubject("All")}
-          className={`px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold border transition-all ${
-            filterSubject === "All"
-              ? "bg-slate-900 text-white border-slate-900"
-              : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-          }`}
-        >
-          All
-        </button>
-        {Object.keys(subjectColors).map((subj) => (
-          <button
-            key={subj}
-            onClick={() => setFilterSubject(subj)}
-            className={`px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold border transition-all ${
-              filterSubject === subj
-                ? "bg-slate-900 text-white border-slate-900"
-                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-            }`}
-          >
-            {subj}
-          </button>
-        ))}
-      </div>
+      {subjects.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            <button
+              onClick={() => {
+                  setFilterSubject("All");
+                  setSelectedSubjectId(null);
+              }}
+              className={`px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold border transition-all ${
+                filterSubject === "All"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              All
+            </button>
+            {subjects.map((subj) => (
+              <button
+                key={subj.id}
+                onClick={() => {
+                    setFilterSubject(subj.name);
+                    setSelectedSubjectId(subj.id);
+                }}
+                className={`px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold border transition-all ${
+                  filterSubject === subj.name
+                    ? "bg-slate-900 text-white border-slate-900"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                {subj.name}
+              </button>
+            ))}
+          </div>
+      )}
 
       {/* All Videos */}
       <div>
@@ -129,73 +186,73 @@ const VideoLectures = () => {
           {filterSubject === "All" ? "All Lectures" : filterSubject}
           <span className="text-slate-400 font-normal ml-2 text-sm">({filtered.length})</span>
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {filtered.map((video) => (
-            <div
-              key={video.id}
-              className="bg-white border border-slate-200 shadow-sm overflow-hidden hover:shadow transition-shadow group cursor-pointer"
-            >
+        
+        {filtered.length === 0 ? (
+            <div className="bg-white border border-dashed border-slate-200 rounded-sm p-12 text-center">
+                <Video size={40} className="text-slate-200 mx-auto mb-4" />
+                <h3 className="text-sm font-bold text-slate-900 mb-1">No lectures available</h3>
+                <p className="text-xs text-slate-400">No video lectures found for the selected subject.</p>
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {filtered.map((video) => (
               <div
-                className="h-32 sm:h-36 relative flex items-center justify-center"
-                style={{ backgroundColor: (subjectColors[video.subject] || "#1e293b") + "12" }}
+                key={video.id}
+                className="bg-white border border-slate-200 shadow-sm overflow-hidden hover:shadow transition-shadow group cursor-pointer"
               >
-                {video.progress === 100 ? (
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle2 size={24} className="text-green-600" />
-                  </div>
-                ) : (
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/90 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                    <Play size={20} className="text-slate-800 ml-1" />
-                  </div>
-                )}
-                {/* Tier badge */}
-                <div className="absolute top-2 left-2">
-                  <ContentBadge tier={video.tier} />
-                </div>
-                <span className="absolute bottom-2 right-2 text-[10px] font-bold bg-black/70 text-white px-2 py-0.5">
-                  {video.duration}
-                </span>
-                {video.progress > 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-200">
-                    <div
-                      className="h-full"
-                      style={{
-                        width: `${video.progress}%`,
-                        backgroundColor: video.progress === 100 ? "#16a34a" : "#d97706",
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="p-3 sm:p-4">
-                <p
-                  className="text-[10px] font-bold uppercase tracking-widest mb-1"
-                  style={{ color: subjectColors[video.subject] || "#1e293b" }}
+                <div
+                  className="h-32 sm:h-36 relative flex items-center justify-center"
+                  style={{ backgroundColor: (subjectColors[video.subject] || "#1e293b") + "12" }}
                 >
-                  {video.subject}
-                </p>
-                <p className="text-sm font-semibold text-slate-800 mb-2 leading-snug line-clamp-2">
-                  {video.title}
-                </p>
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span className="flex items-center gap-1 truncate">
-                    <User size={12} className="shrink-0" />
-                    {video.teacher}
+                  {video.progress === 100 ? (
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-100 rounded-full flex items-center justify-center">
+                      <CheckCircle2 size={24} className="text-green-600" />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/90 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                      <Play size={20} className="text-slate-800 ml-1" />
+                    </div>
+                  )}
+                  <span className="absolute bottom-2 right-2 text-[10px] font-bold bg-black/70 text-white px-2 py-0.5">
+                    {video.duration}
                   </span>
-                  {video.progress === 100 && (
-                    <span className="text-green-600 font-semibold shrink-0 ml-2">Completed</span>
+                  {video.progress > 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-200">
+                      <div
+                        className="h-full"
+                        style={{
+                          width: `${video.progress}%`,
+                          backgroundColor: video.progress === 100 ? "#16a34a" : "#d97706",
+                        }}
+                      />
+                    </div>
                   )}
                 </div>
-                {video.resumeTimestamp && video.progress > 0 && video.progress < 100 && (
-                  <p className="text-[10px] font-semibold text-amber-600 mt-1.5">
-                    Resume at {video.resumeTimestamp}
+  
+                <div className="p-3 sm:p-4">
+                  <p
+                    className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                    style={{ color: subjectColors[video.subject] || "#1e293b" }}
+                  >
+                    {video.subject}
                   </p>
-                )}
+                  <p className="text-sm font-semibold text-slate-800 mb-2 leading-snug line-clamp-2">
+                    {video.title}
+                  </p>
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span className="flex items-center gap-1 truncate">
+                      <User size={12} className="shrink-0" />
+                      {video.teacher}
+                    </span>
+                    {video.progress === 100 && (
+                      <span className="text-green-600 font-semibold shrink-0 ml-2">Completed</span>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

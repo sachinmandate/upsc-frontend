@@ -1,30 +1,12 @@
 import React from 'react';
 
-const Input = ({ 
-  label, 
-  type = 'text', 
-  name, 
-  value, 
-  onChange, 
-  placeholder,
-  required = false,
-  className = '' 
-}) => {
+const Input = ({ label, className = '', ...props }) => {
   return (
-    <div className="mb-4">
-      {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {label} {required && <span className="text-red-600">*</span>}
-        </label>
-      )}
+    <div className="space-y-1.5">
+      {label && <label className="text-sm font-medium text-gray-700">{label}</label>}
       <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent ${className}`}
+        className={`flex h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-colors ${className}`}
+        {...props}
       />
     </div>
   );
