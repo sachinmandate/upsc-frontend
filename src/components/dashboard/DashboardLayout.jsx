@@ -21,6 +21,7 @@ import {
   Crown,
   Layers,
   MessageSquare,
+  History,
 } from "lucide-react";
 
 const sidebarLinks = [
@@ -81,57 +82,54 @@ const DashboardLayout = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-gray-200 flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Logo */}
-        <div className="h-16 flex items-center gap-3 px-5 border-b border-slate-200 shrink-0">
-          <Landmark className="text-slate-900 shrink-0" size={22} />
-          <span className="font-bold text-base text-slate-900 tracking-tight font-serif uppercase truncate">
-            MPSC–UPSC
-          </span>
-          <button
-            className="ml-auto lg:hidden text-slate-400 hover:text-slate-800 shrink-0"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X size={20} />
-          </button>
+        <div>
+          {/* Logo */}
+          <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-200">
+            <BookOpen className="h-6 w-6 text-gray-900" />
+            <span className="text-lg font-semibold tracking-tight text-gray-900">UPSC Portal</span>
+            <button
+              className="ml-auto lg:hidden text-gray-400 hover:text-gray-800 shrink-0"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Nav links */}
+          <nav className="mt-4 flex flex-col gap-1 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+            {sidebarLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.end}
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`
+                }
+              >
+                <link.icon className="h-4 w-4" />
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
         </div>
 
-        {/* Nav links */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3">
-          <ul className="space-y-1">
-            {sidebarLinks.map((link) => (
-              <li key={link.to}>
-                <NavLink
-                  to={link.to}
-                  end={link.end}
-                  onClick={() => setSidebarOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-all ${
-                      isActive
-                        ? "bg-slate-900 text-white"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`
-                  }
-                >
-                  <link.icon size={18} />
-                  <span>{link.label}</span>
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
         {/* Logout */}
-        <div className="p-3 border-t border-slate-200 shrink-0">
+        <div className="px-3 pb-6 border-t pt-4 border-gray-200 lg:border-t-0 lg:pt-0 shrink-0">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all w-full"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
           >
-            <LogOut size={18} />
-            <span>Logout</span>
+            <LogOut className="h-4 w-4" />
+            Logout
           </button>
         </div>
       </aside>

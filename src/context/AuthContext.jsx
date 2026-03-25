@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
     if (savedUser && savedToken) {
       try {
         setUser(JSON.parse(savedUser));
+        setToken(savedToken);
       } catch (e) {
         console.error("Failed to parse saved user", e);
         localStorage.removeItem("auth_user");
@@ -26,60 +27,27 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password, role = 'student') => {
-    try {
-      const endpoint = `/api/auth/${role}/login`;
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Construct user object consistently
-        const userData = {
-          id: data.studentId || data.teacherId || data.adminId || data.id,
-          email: data.email || email.trim(),
-          firstName: data.firstName || data.name || "",
-          lastName: data.lastName || "",
-          role: (data.role ? data.role.toLowerCase() : role).replace('user', 'student'),
-          ...data.user
-        };
-
-        setUser(userData);
-        localStorage.setItem("auth_token", data.token);
-        localStorage.setItem("auth_user", JSON.stringify(userData));
-        return { success: true, user: userData };
-      } else {
-        return { success: false, message: data.message || "Invalid credentials" };
-      }
-    } catch (error) {
-      console.error(`${role} login error:`, error);
-      return { success: false, message: "Network error. Please try again." };
-    }
+    // --- MOCK LOGIN FOR PRESENTATION ---
+    const userData = {
+      id: 1,
+      email: email.trim(),
+      firstName: "Demo",
+      lastName: role.charAt(0).toUpperCase() + role.slice(1),
+      role: role.toLowerCase()
+    };
+    const dummyToken = "mock_token_" + role;
+    
+    setUser(userData);
+    setToken(dummyToken);
+    localStorage.setItem("auth_token", dummyToken);
+    localStorage.setItem("auth_user", JSON.stringify(userData));
+    
+    return { success: true, user: userData };
   };
 
   const register = async (formData, role = 'student') => {
-    try {
-      const endpoint = `/api/auth/${role}/register`;
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        return { success: true, message: data.message || "Registration successful!" };
-      } else {
-        return { success: false, message: data.message || "Registration failed" };
-      }
-    } catch (error) {
-      console.error(`${role} registration error:`, error);
-      return { success: false, message: "Network error. Please try again." };
-    }
+    // --- MOCK REGISTRATION FOR PRESENTATION ---
+    return { success: true, message: "Registration successful! (Demo Mode)" };
   };
 
   const logout = () => {

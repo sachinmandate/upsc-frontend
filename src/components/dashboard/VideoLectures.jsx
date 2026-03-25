@@ -4,6 +4,7 @@ import {
   Play,
   User,
   CheckCircle2,
+  X
 } from "lucide-react";
 
 const subjectColors = {
@@ -21,6 +22,10 @@ const VideoLectures = () => {
   const [videos, setVideos] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Video Player Modal State
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -32,6 +37,25 @@ const VideoLectures = () => {
     }
   }, [selectedSubjectId]);
 
+  // Sync video progress to backend every 5 seconds
+  useEffect(() => {
+    let interval;
+    if (showVideoModal && selectedVideo) {
+      interval = setInterval(() => {
+        const videoElement = document.getElementById("course-video-player");
+        if (videoElement && !videoElement.paused) {
+           const currentTime = Math.floor(videoElement.currentTime);
+           const duration = videoElement.duration || 1;
+           const percentage = Math.floor((currentTime / duration) * 100);
+           
+           studentApi.updateVideoProgress(selectedVideo.id, currentTime, percentage)
+             .catch(err => console.error("Error updating progress:", err));
+        }
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [showVideoModal, selectedVideo]);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -39,7 +63,6 @@ const VideoLectures = () => {
       setSubjects(subjectsData);
       
       if (subjectsData.length > 0 && !selectedSubjectId) {
-          // Default to first subject
           setSelectedSubjectId(subjectsData[0].id);
           setFilterSubject(subjectsData[0].name);
       }
@@ -57,6 +80,17 @@ const VideoLectures = () => {
       } catch (error) {
           console.error("Error fetching videos:", error);
       }
+  };
+
+  const handleVideoClick = (video) => {
+      setSelectedVideo(video);
+      setShowVideoModal(true);
+      setTimeout(() => {
+          const videoElement = document.getElementById("course-video-player");
+          if (videoElement && video.lastWatchTime) {
+              videoElement.currentTime = video.lastWatchTime;
+          }
+      }, 500);
   };
 
   const filtered = videos.filter(
@@ -90,9 +124,9 @@ const VideoLectures = () => {
             {continueWatching.map((video) => (
               <div
                 key={video.id}
+                onClick={() => handleVideoClick(video)}
                 className="bg-white border border-slate-200 shadow-sm overflow-hidden hover:shadow transition-shadow group cursor-pointer"
               >
-                {/* Thumbnail placeholder */}
                 <div
                   className="h-32 sm:h-36 relative flex items-center justify-center"
                   style={{ backgroundColor: (subjectColors[video.subject] || "#1e293b") + "12" }}
@@ -100,14 +134,9 @@ const VideoLectures = () => {
                   <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/90 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                     <Play size={20} className="text-slate-800 ml-1" />
                   </div>
-                  {/* Tier badge */}
-                  <div className="absolute top-2 left-2">
-                    <ContentBadge tier={video.tier} />
-                  </div>
                   <span className="absolute bottom-2 right-2 text-[10px] font-bold bg-black/70 text-white px-2 py-0.5">
                     {video.duration}
                   </span>
-                  {/* Progress bar */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-200">
                     <div
                       className="h-full bg-amber-500"
@@ -133,11 +162,6 @@ const VideoLectures = () => {
                     </span>
                     <span className="shrink-0">{video.progress}% done</span>
                   </div>
-                  {video.resumeTimestamp && (
-                    <p className="text-[10px] font-semibold text-amber-600 mt-1.5">
-                      Resume at {video.resumeTimestamp}
-                    </p>
-                  )}
                 </div>
               </div>
             ))}
@@ -187,7 +211,7 @@ const VideoLectures = () => {
           <span className="text-slate-400 font-normal ml-2 text-sm">({filtered.length})</span>
         </h2>
         
-        {filtered.length === 0 ? (
+        {filtered.length === 0 && !loading ? (
             <div className="bg-white border border-dashed border-slate-200 rounded-sm p-12 text-center">
                 <Video size={40} className="text-slate-200 mx-auto mb-4" />
                 <h3 className="text-sm font-bold text-slate-900 mb-1">No lectures available</h3>
@@ -198,6 +222,7 @@ const VideoLectures = () => {
             {filtered.map((video) => (
               <div
                 key={video.id}
+                onClick={() => handleVideoClick(video)}
                 className="bg-white border border-slate-200 shadow-sm overflow-hidden hover:shadow transition-shadow group cursor-pointer"
               >
                 <div
@@ -254,6 +279,42 @@ const VideoLectures = () => {
           </div>
         )}
       </div>
+
+      {/* Video Modal */}
+      {showVideoModal && selectedVideo && (
+        <div className="fixed inset-0 bg-black/98 z-[100] flex flex-col items-center justify-center p-4">
+            <div className="w-full max-w-5xl flex justify-between items-center mb-4 px-2">
+                <div className="min-w-0 pr-12">
+                    <h2 className="text-white text-lg font-bold truncate">{selectedVideo.title}</h2>
+                    <p className="text-slate-400 text-xs truncate">{selectedVideo.subject}</p>
+                </div>
+                <button 
+                  onClick={() => {
+                      setShowVideoModal(false);
+                      setSelectedVideo(null);
+                  }}
+                  className="absolute top-4 right-4 z-[110] w-10 h-10 bg-black/50 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors shrink-0"
+                >
+                    <X size={24} />
+                </button>
+            </div>
+            
+            <div className="w-full max-w-5xl aspect-video bg-black/40 border border-white/5 relative shadow-2xl">
+                <video 
+                  id="course-video-player"
+                  src={selectedVideo.videoUrl} 
+                  controls 
+                  autoPlay
+                  className="w-full h-full"
+                />
+            </div>
+            
+            <div className="w-full max-w-5xl mt-6 px-2 text-slate-300">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Description</h3>
+                <p className="text-sm opacity-80 leading-relaxed">{selectedVideo.description || "No description provided."}</p>
+            </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -15,9 +15,25 @@ const getHeadersWithoutContentType = () => {
   };
 };
 
+const customFetch = async (...args) => {
+  try {
+    const response = await fetch(...args);
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      window.location.href = "/login";
+    }
+    if (!response.ok) throw new Error("Backend error");
+    return response;
+  } catch (err) {
+    console.warn("MOCK TEACHER API RESPONSE:", args[0]);
+    return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
+  }
+};
+
 export const fetchDashboardStats = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/dashboard`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/dashboard`, { headers: getHeaders() });
         if (!response.ok) throw new Error("Failed to fetch dashboard stats");
         return await response.json();
     } catch (error) {
@@ -28,7 +44,7 @@ export const fetchDashboardStats = async () => {
 
 export const fetchMyClasses = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/classes`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/classes`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return [];
@@ -37,7 +53,7 @@ export const fetchMyClasses = async () => {
 
 export const selectClasses = async (classIds) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/select-classes`, {
+        const response = await customFetch(`${API_BASE_URL}/select-classes`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify({ classIds })
@@ -50,7 +66,7 @@ export const selectClasses = async (classIds) => {
 
 export const fetchMySubjects = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/my-subjects`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/my-subjects`, { headers: getHeaders() });
         const data = await response.json();
         console.log("Teacher subjects data = ", data);
         return data;
@@ -61,7 +77,7 @@ export const fetchMySubjects = async () => {
 
 export const fetchAvailableSubjects = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/available-subjects`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/available-subjects`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return [];
@@ -70,7 +86,7 @@ export const fetchAvailableSubjects = async () => {
 
 export const selectSubjects = async (subjectIds) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/select-subjects`, {
+        const response = await customFetch(`${API_BASE_URL}/select-subjects`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify({ subjectIds })
@@ -83,7 +99,7 @@ export const selectSubjects = async (subjectIds) => {
 
 export const createChapter = async (chapterData) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/chapters`, {
+        const response = await customFetch(`${API_BASE_URL}/chapters`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify(chapterData)
@@ -96,7 +112,7 @@ export const createChapter = async (chapterData) => {
 
 export const fetchMyChapters = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/chapters`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/chapters`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return [];
@@ -105,7 +121,7 @@ export const fetchMyChapters = async () => {
 
 export const fetchMyGroups = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/groups`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/groups`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return [];
@@ -114,7 +130,7 @@ export const fetchMyGroups = async () => {
 
 export const createGroup = async (groupData) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/groups`, {
+        const response = await customFetch(`${API_BASE_URL}/groups`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify(groupData)
@@ -127,7 +143,7 @@ export const createGroup = async (groupData) => {
 
 export const updateGroup = async (groupId, groupData) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
+        const response = await customFetch(`${API_BASE_URL}/groups/${groupId}`, {
             method: "PUT",
             headers: getHeaders(),
             body: JSON.stringify(groupData)
@@ -140,7 +156,7 @@ export const updateGroup = async (groupId, groupData) => {
 
 export const deleteGroup = async (groupId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
+        const response = await customFetch(`${API_BASE_URL}/groups/${groupId}`, {
             method: "DELETE",
             headers: getHeaders()
         });
@@ -152,7 +168,7 @@ export const deleteGroup = async (groupId) => {
 
 export const fetchAnnouncementsByTeacher = async (teacherId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/announcements/teacher/${teacherId}`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/announcements/teacher/${teacherId}`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return [];
@@ -161,7 +177,7 @@ export const fetchAnnouncementsByTeacher = async (teacherId) => {
 
 export const createAnnouncement = async (announcementData) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/announcements`, {
+        const response = await customFetch(`${API_BASE_URL}/announcements`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify(announcementData)
@@ -174,7 +190,7 @@ export const createAnnouncement = async (announcementData) => {
 
 export const addStudentToGroup = async (groupId, studentId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/students/${studentId}`, {
+        const response = await customFetch(`${API_BASE_URL}/groups/${groupId}/students/${studentId}`, {
             method: "POST",
             headers: getHeaders()
         });
@@ -186,7 +202,7 @@ export const addStudentToGroup = async (groupId, studentId) => {
 
 export const removeStudentFromGroup = async (groupId, studentId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/students/${studentId}`, {
+        const response = await customFetch(`${API_BASE_URL}/groups/${groupId}/students/${studentId}`, {
             method: "DELETE",
             headers: getHeaders()
         });
@@ -198,7 +214,7 @@ export const removeStudentFromGroup = async (groupId, studentId) => {
 
 export const fetchMyStudents = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/my-students`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/my-students`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return [];
@@ -207,7 +223,7 @@ export const fetchMyStudents = async () => {
 
 export const searchStudents = async (query) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/students/search?query=${query}`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/students/search?query=${query}`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return [];
@@ -216,7 +232,7 @@ export const searchStudents = async (query) => {
 
 export const fetchStudentProgress = async (studentId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/students/${studentId}/progress`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/students/${studentId}/progress`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return null;
@@ -225,7 +241,7 @@ export const fetchStudentProgress = async (studentId) => {
 
 export const uploadVideo = async (videoData) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/videos`, {
+        const response = await customFetch(`${API_BASE_URL}/videos`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify(videoData)
@@ -238,7 +254,7 @@ export const uploadVideo = async (videoData) => {
 
 export const fetchVideosByChapter = async (chapterId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/chapters/${chapterId}/videos`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/chapters/${chapterId}/videos`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return [];
@@ -247,7 +263,7 @@ export const fetchVideosByChapter = async (chapterId) => {
 
 export const uploadNote = async (noteData) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/notes`, {
+        const response = await customFetch(`${API_BASE_URL}/notes`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify(noteData)
@@ -265,7 +281,7 @@ export const uploadVideoFile = async (file, chapterId, title) => {
         formData.append("chapterId", chapterId);
         if (title) formData.append("title", title);
 
-        const response = await fetch(`${API_BASE_URL}/upload/video`, {
+        const response = await customFetch(`${API_BASE_URL}/upload/video`, {
             method: "POST",
             headers: getHeadersWithoutContentType(),
             body: formData
@@ -287,7 +303,7 @@ export const uploadNoteFile = async (file, chapterId, title) => {
         formData.append("chapterId", chapterId);
         if (title) formData.append("title", title);
 
-        const response = await fetch(`${API_BASE_URL}/upload/note`, {
+        const response = await customFetch(`${API_BASE_URL}/upload/note`, {
             method: "POST",
             headers: getHeadersWithoutContentType(),
             body: formData
@@ -304,7 +320,7 @@ export const uploadNoteFile = async (file, chapterId, title) => {
 
 export const fetchNotesByChapter = async (chapterId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/chapters/${chapterId}/notes`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/chapters/${chapterId}/notes`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return [];
@@ -313,7 +329,7 @@ export const fetchNotesByChapter = async (chapterId) => {
 
 export const createAssignment = async (assignmentData) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/assignments`, {
+        const response = await customFetch(`${API_BASE_URL}/assignments`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify(assignmentData)
@@ -326,7 +342,7 @@ export const createAssignment = async (assignmentData) => {
 
 export const fetchAssignments = async (chapterId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/assignments/chapter/${chapterId}`, { headers: getHeaders() });
+        const response = await customFetch(`${API_BASE_URL}/assignments/chapter/${chapterId}`, { headers: getHeaders() });
         return await response.json();
     } catch (error) {
         return [];

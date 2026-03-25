@@ -20,10 +20,13 @@ import Profile from "./components/dashboard/Profile";
 import ConnectTeachers from "./components/dashboard/ConnectTeachers";
 import SubjectBrowser from "./components/dashboard/SubjectBrowser";
 import GroupChat from "./components/dashboard/GroupChat";
+import WatchHistory from "./components/dashboard/WatchHistory";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherLogin from "./components/auth/teacher/TeacherLogin";
 import AdminLogin from "./components/auth/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import LandingPage from "./pages/LandingPage";
+import RoleSelection from "./pages/RoleSelection";
 import "./App.css";
 
 
@@ -33,19 +36,21 @@ function App() {
       <Toaster position="top-right" richColors />
       <Router>
         <Routes>
-          {/* Root Redirect */}
-          <Route path="/" element={<RootRedirect />} />
+          {/* Root & Dashboard Redirect */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/dashboard" element={<DashboardRedirect />} />
 
           {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/role-selection" element={<PublicRoute><RoleSelection /></PublicRoute>} />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
 
           {/* Teacher Auth */}
-          <Route path="/teacher/login" element={<TeacherLogin />} />
+          <Route path="/teacher/login" element={<PublicRoute><TeacherLogin /></PublicRoute>} />
 
           {/* Admin Auth */}
-          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/login" element={<PublicRoute><AdminLogin /></PublicRoute>} />
 
           {/* Student Dashboard Routes */}
           <Route element={<ProtectedRoute allowedRoles={['student']} />}>
@@ -88,8 +93,8 @@ function App() {
   );
 }
 
-// Simple component to handle root redirection based on auth state
-const RootRedirect = () => {
+// Simple component to handle dashboard redirection based on auth state
+const DashboardRedirect = () => {
   const { user, isAuthenticated, loading } = useAuth();
 
   if (loading) return null;
@@ -99,6 +104,21 @@ const RootRedirect = () => {
   if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
   if (user.role === 'teacher') return <Navigate to="/teacher/dashboard" replace />;
   return <Navigate to="/dashboard/student" replace />;
+};
+
+// Simple component to protect public routes from being accessed by authenticated users
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, user, loading } = useAuth();
+
+  if (loading) return null;
+
+  if (isAuthenticated && user) {
+    if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+    if (user.role === 'teacher') return <Navigate to="/teacher/dashboard" replace />;
+    return <Navigate to="/dashboard/student" replace />;
+  }
+
+  return children;
 };
 
 export default App;

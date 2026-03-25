@@ -28,3 +28,4 @@ export const studyHours = [];
 export const mockTestScores = [];
 export const weakAreas = [];
 export const notifications = [];
+export const watchHistory = [];

@@ -8,10 +8,26 @@ const getHeaders = () => {
   };
 };
 
+const customFetch = async (...args) => {
+  try {
+    const response = await fetch(...args);
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      window.location.href = "/login";
+    }
+    if (!response.ok) throw new Error("Backend error");
+    return response;
+  } catch (err) {
+    console.warn("MOCK ADMIN API RESPONSE:", args[0]);
+    return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
+  }
+};
+
 // Teacher Management
 export const fetchPendingTeachers = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/teachers/pending`, { headers: getHeaders() });
+    const response = await customFetch(`${API_BASE_URL}/teachers/pending`, { headers: getHeaders() });
     if (!response.ok) throw new Error("Failed to fetch pending teachers");
     return await response.json();
   } catch (error) {
@@ -22,7 +38,7 @@ export const fetchPendingTeachers = async () => {
 
 export const approveTeacher = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/teacher/${id}/approve`, {
+    const response = await customFetch(`${API_BASE_URL}/teacher/${id}/approve`, {
       method: "PUT",
       headers: getHeaders(),
     });
@@ -34,7 +50,7 @@ export const approveTeacher = async (id) => {
 
 export const rejectTeacher = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/teacher/${id}/reject`, {
+    const response = await customFetch(`${API_BASE_URL}/teacher/${id}/reject`, {
       method: "PUT",
       headers: getHeaders(),
     });
@@ -46,18 +62,18 @@ export const rejectTeacher = async (id) => {
 
 export const fetchAllTeachers = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/teachers`, { headers: getHeaders() });
+      const response = await customFetch(`${API_BASE_URL}/teachers`, { headers: getHeaders() });
       if (!response.ok) throw new Error("Failed to fetch teachers");
       return await response.json();
     } catch (error) {
-      console.error("Fetch all teachers error:", error);
+        console.error("Fetch all teachers error:", error);
       return [];
     }
 };
 
 export const updateTeacherPricing = async (id, pricingData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/teacher/${id}/pricing`, {
+      const response = await customFetch(`${API_BASE_URL}/teacher/${id}/pricing`, {
         method: "PUT",
         headers: getHeaders(),
         body: JSON.stringify(pricingData)
@@ -71,7 +87,7 @@ export const updateTeacherPricing = async (id, pricingData) => {
 
 export const updateTeacherSubscription = async (id, subscriptionType) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/teacher/${id}/subscription-type?subscriptionType=${subscriptionType}`, {
+      const response = await customFetch(`${API_BASE_URL}/teacher/${id}/subscription-type?subscriptionType=${subscriptionType}`, {
         method: "PUT",
         headers: getHeaders()
       });
@@ -83,7 +99,7 @@ export const updateTeacherSubscription = async (id, subscriptionType) => {
 
 export const assignTeacherSubjects = async (teacherId, subjectIds) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/teacher/${teacherId}/subjects`, {
+      const response = await customFetch(`${API_BASE_URL}/teacher/${teacherId}/subjects`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify(subjectIds)
@@ -98,7 +114,7 @@ export const assignTeacherSubjects = async (teacherId, subjectIds) => {
 // Class & Subject Management
 export const fetchAllClasses = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/classes`, { headers: getHeaders() });
+    const response = await customFetch(`${API_BASE_URL}/classes`, { headers: getHeaders() });
     if (!response.ok) throw new Error("Failed to fetch classes");
     return await response.json();
   } catch (error) {
@@ -108,7 +124,7 @@ export const fetchAllClasses = async () => {
 
 export const createClass = async (classData) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/classes`, {
+    const response = await customFetch(`${API_BASE_URL}/classes`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(classData),
@@ -121,7 +137,7 @@ export const createClass = async (classData) => {
 
 export const fetchSubjectsByClass = async (classId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/subjects/${classId}`, { headers: getHeaders() });
+    const response = await customFetch(`${API_BASE_URL}/subjects/${classId}`, { headers: getHeaders() });
     if (!response.ok) throw new Error("Failed to fetch subjects");
     return await response.json();
   } catch (error) {
@@ -131,7 +147,7 @@ export const fetchSubjectsByClass = async (classId) => {
 
 export const fetchAllSubjects = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/subjects`, { headers: getHeaders() });
+      const response = await customFetch(`${API_BASE_URL}/subjects`, { headers: getHeaders() });
       if (!response.ok) throw new Error("Failed to fetch all subjects");
       return await response.json();
     } catch (error) {
@@ -142,7 +158,7 @@ export const fetchAllSubjects = async () => {
 
 export const createSubject = async (subjectData) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/subjects`, {
+    const response = await customFetch(`${API_BASE_URL}/subjects`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(subjectData),
@@ -156,7 +172,7 @@ export const createSubject = async (subjectData) => {
 // Exam Management
 export const fetchAllExams = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/exams`, { headers: getHeaders() });
+      const response = await customFetch(`${API_BASE_URL}/exams`, { headers: getHeaders() });
       if (!response.ok) throw new Error("Failed to fetch exams");
       return await response.json();
     } catch (error) {
@@ -166,7 +182,7 @@ export const fetchAllExams = async () => {
 
 export const createExam = async (examData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/exams`, {
+      const response = await customFetch(`${API_BASE_URL}/exams`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify(examData),
@@ -180,7 +196,7 @@ export const createExam = async (examData) => {
 // Student & Group Management
 export const fetchAllStudents = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/students`, { headers: getHeaders() });
+      const response = await customFetch(`${API_BASE_URL}/students`, { headers: getHeaders() });
       return await response.json();
     } catch (error) {
       return [];
@@ -189,7 +205,7 @@ export const fetchAllStudents = async () => {
 
 export const fetchAllGroups = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/groups`, { headers: getHeaders() });
+      const response = await customFetch(`${API_BASE_URL}/groups`, { headers: getHeaders() });
       return await response.json();
     } catch (error) {
       return [];
@@ -199,7 +215,7 @@ export const fetchAllGroups = async () => {
 // Syllabus Management
 export const createChapter = async (chapterData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/chapters`, {
+      const response = await customFetch(`${API_BASE_URL}/chapters`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify(chapterData),
@@ -212,7 +228,7 @@ export const createChapter = async (chapterData) => {
 
 export const fetchChaptersBySubject = async (subjectId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/chapters/subject/${subjectId}`, { headers: getHeaders() });
+      const response = await customFetch(`${API_BASE_URL}/chapters/subject/${subjectId}`, { headers: getHeaders() });
       return await response.json();
     } catch (error) {
       return [];
@@ -221,7 +237,7 @@ export const fetchChaptersBySubject = async (subjectId) => {
 
 export const createCurriculum = async (curriculumData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/curriculum`, {
+      const response = await customFetch(`${API_BASE_URL}/curriculum`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify(curriculumData),
@@ -234,7 +250,7 @@ export const createCurriculum = async (curriculumData) => {
 
 export const fetchCurriculumByChapter = async (chapterId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/curriculum/chapter/${chapterId}`, { headers: getHeaders() });
+      const response = await customFetch(`${API_BASE_URL}/curriculum/chapter/${chapterId}`, { headers: getHeaders() });
       return await response.json();
     } catch (error) {
       return [];

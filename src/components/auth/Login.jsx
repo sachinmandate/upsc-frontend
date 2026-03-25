@@ -97,7 +97,7 @@ const Login = () => {
                   className="text-xs font-semibold text-slate-400 hover:text-slate-800 transition-all underline decoration-dotted underline-offset-2"
                 >
                   Forgot?
-                </Link>
+                </button>
               </div>
               <div className="relative">
                 <Lock

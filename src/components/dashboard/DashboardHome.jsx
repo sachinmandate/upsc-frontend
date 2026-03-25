@@ -104,6 +104,10 @@ const DashboardHome = () => {
   const completedTasks = dailyTasks.filter((t) => t.completed).length;
   const latestScore = mockTestScores?.[mockTestScores.length - 1] || { percentage: 0 };
 
+  // CRASH FIX: Define undefined variables that were missing from state
+  const continueWatchingVideos = dashboardData?.continueWatchingVideos || [];
+  const activityFeed = dashboardData?.activityFeed || [];
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-pulse">
