@@ -25,7 +25,7 @@ const PerformanceAnalytics = () => {
     try {
       const [scores, subjectsData] = await Promise.all([
         studentApi.fetchMockTestScores(),
-        studentApi.fetchEnrolledGroups()
+        studentApi.fetchSubjects()
       ]);
       setTestScores(scores);
       setSubjects(subjectsData);

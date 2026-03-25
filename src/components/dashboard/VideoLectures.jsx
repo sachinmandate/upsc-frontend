@@ -38,7 +38,7 @@ const VideoLectures = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const subjectsData = await studentApi.fetchEnrolledGroups();
+      const subjectsData = await studentApi.fetchSubjects();
       setSubjects(subjectsData);
       
       if (subjectsData.length > 0 && !selectedSubjectId) {

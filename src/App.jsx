@@ -18,6 +18,8 @@ import PerformanceAnalytics from "./components/dashboard/PerformanceAnalytics";
 import SubscriptionPlans from "./components/dashboard/SubscriptionPlans";
 import Profile from "./components/dashboard/Profile";
 import ConnectTeachers from "./components/dashboard/ConnectTeachers";
+import SubjectBrowser from "./components/dashboard/SubjectBrowser";
+import GroupChat from "./components/dashboard/GroupChat";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherLogin from "./components/auth/teacher/TeacherLogin";
 import AdminLogin from "./components/auth/admin/AdminLogin";
@@ -60,6 +62,8 @@ function App() {
               <Route path="subscriptions" element={<SubscriptionPlans />} />
               <Route path="profile" element={<Profile />} />
               <Route path="teachers" element={<ConnectTeachers />} />
+              <Route path="subjects" element={<SubjectBrowser />} />
+              <Route path="chat" element={<GroupChat />} />
             </Route>
           </Route>
 

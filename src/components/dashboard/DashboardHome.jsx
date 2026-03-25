@@ -42,19 +42,19 @@ const DashboardHome = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [dashboard, groupsData, materialsData, scoresData] = await Promise.all([
+      const [dashboard, subjectsData, submissionsData, scoresData] = await Promise.all([
         studentApi.fetchDashboard().catch(() => ({})),
-        studentApi.fetchEnrolledGroups().catch(() => []),
-        studentApi.fetchAnnouncements().catch(() => []),
-        studentApi.fetchRecentMaterials().catch(() => []), 
+        studentApi.fetchSubjects().catch(() => []),
+        studentApi.fetchMySubmissions().catch(() => []),
+        studentApi.fetchMockTestScores().catch(() => []), 
       ]);
 
       setDashboardData(dashboard);
-      setAssignments([]); // To be implemented
-      setDailyTasks([]); // Mocked
-      setRecentMaterials(Array.isArray(materialsData) ? materialsData : []);
+      setAssignments(Array.isArray(submissionsData) ? submissionsData : []);
+      setDailyTasks([]); 
+      setRecentMaterials([]);
       setMockTestScores(Array.isArray(scoresData) ? scoresData : []);
-      setSubjects(Array.isArray(groupsData) ? groupsData : []);
+      setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
     } catch (error) {
       console.error("Error loading dashboard:", error);
     } finally {
@@ -85,7 +85,6 @@ const DashboardHome = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Hero */}
       <div className="bg-white border border-slate-200 shadow-sm p-5 sm:p-6 lg:p-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 lg:gap-6">
           <div className="flex-1 min-w-0">

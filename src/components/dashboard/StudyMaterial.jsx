@@ -8,6 +8,7 @@ import {
   Filter,
   ChevronRight,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const StudyMaterial = () => {
   const [subjects, setSubjects] = useState([]);
@@ -25,7 +26,7 @@ const StudyMaterial = () => {
     setLoading(true);
     try {
       const [groupsData, materialsData] = await Promise.all([
-        studentApi.fetchEnrolledGroups().catch(() => []),
+        studentApi.fetchSubjects().catch(() => []),
         studentApi.fetchRecentMaterials().catch(() => [])
       ]);
       setSubjects(groupsData);
@@ -188,7 +189,21 @@ const StudyMaterial = () => {
                     {note.subject} &middot; {note.pages} pages &middot; {note.size}
                   </p>
                 </div>
-                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shrink-0 rounded-sm">
+                <button 
+                  onClick={async () => {
+                    try {
+                      await studentApi.trackNoteDownload(note.id);
+                      if (note.fileUrl || note.url) {
+                        window.open(note.fileUrl || note.url, "_blank");
+                      } else {
+                        toast.success("Note download tracked! (No URL provided)");
+                      }
+                    } catch (error) {
+                      toast.error("Failed to download note");
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shrink-0 rounded-sm"
+                >
                   <Download size={13} />
                   <span className="hidden sm:inline">Download</span>
                 </button>

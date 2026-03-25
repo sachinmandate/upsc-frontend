@@ -10,13 +10,21 @@ import {
   Calendar,
   Award,
   Edit3,
+  X,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const Profile = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [subjects, setSubjects] = useState([]);
+  
+  const [showExamModal, setShowExamModal] = useState(false);
+  const [exams, setExams] = useState([]);
+  const [selectedExamId, setSelectedExamId] = useState("");
+  const [updatingExam, setUpdatingExam] = useState(false);
 
   useEffect(() => {
     loadProfileData();
@@ -27,7 +35,7 @@ const Profile = () => {
     try {
       const [profileData, subjectsData] = await Promise.all([
         studentApi.fetchDashboard().catch(() => ({})),
-        studentApi.fetchEnrolledGroups().catch(() => []),
+        studentApi.fetchSubjects().catch(() => []),
       ]);
       setProfile(profileData);
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
@@ -35,6 +43,36 @@ const Profile = () => {
       console.error("Error loading profile:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openExamModal = async () => {
+    setShowExamModal(true);
+    try {
+      const examsData = await studentApi.fetchExams();
+      setExams(Array.isArray(examsData) ? examsData : []);
+      if (profile?.examTarget) {
+         const current = examsData.find(e => e.name === profile.examTarget);
+         if (current) setSelectedExamId(current.id.toString());
+      }
+    } catch (e) {
+      toast.error("Failed to load exams");
+    }
+  };
+
+  const handleUpdateExam = async (e) => {
+    e.preventDefault();
+    if (!selectedExamId) return;
+    setUpdatingExam(true);
+    try {
+      await studentApi.selectExam(selectedExamId);
+      toast.success("Exam target updated successfully");
+      setShowExamModal(false);
+      loadProfileData(); // Reload profile
+    } catch (e) {
+      toast.error("Failed to update exam target");
+    } finally {
+      setUpdatingExam(false);
     }
   };
 
@@ -116,12 +154,20 @@ const Profile = () => {
                   <div className="w-9 h-9 bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
                     <row.icon size={16} className="text-slate-500" />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">
                       {row.label}
                     </p>
                     <p className="text-sm font-medium text-slate-800 truncate">{row.value}</p>
                   </div>
+                  {row.label === "Exam Target" && (
+                    <button 
+                      onClick={openExamModal}
+                      className="text-xs font-bold text-amber-600 hover:text-amber-700 hover:underline transition-all"
+                    >
+                      Change
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -151,6 +197,52 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Update Exam Modal */}
+      {showExamModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm shadow-xl border border-slate-200 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-900">Change Exam Target</h2>
+              <button 
+                onClick={() => setShowExamModal(false)}
+                className="text-slate-400 hover:text-slate-900 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateExam} className="p-4 sm:p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                  Select New Exam
+                </label>
+                <select
+                  required
+                  className="w-full px-4 py-3 border border-slate-200 text-sm focus:outline-none focus:border-slate-900 transition-colors bg-white"
+                  value={selectedExamId}
+                  onChange={(e) => setSelectedExamId(e.target.value)}
+                >
+                  <option value="" disabled>Select an exam setup...</option>
+                  {exams.map(exam => (
+                    <option key={exam.id} value={exam.id}>{exam.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={updatingExam || !selectedExamId}
+                  className="w-full btn-primary py-3 text-sm font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                  {updatingExam ? <Loader2 size={16} className="animate-spin" /> : "Update Exam"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

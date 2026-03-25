@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { studentApi } from "../../api/studentApi";
 import {
   Video,
@@ -19,16 +19,24 @@ import { toast } from "sonner";
 const CourseView = () => {
   const { subjectId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const teacherId = searchParams.get("teacherId");
   const [subject, setSubject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [chapters, setChapters] = useState([]);
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [videos, setVideos] = useState([]);
   const [notes, setNotes] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [activeTab, setActiveTab] = useState("videos"); // videos, notes, assignments
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [videoProgress, setVideoProgress] = useState(0);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [submissionData, setSubmissionData] = useState({ text: "", file: "" });
+  const [submitting, setSubmitting] = useState(false);
+
 
   // Interval for updating progress
   useEffect(() => {
@@ -57,19 +65,19 @@ const CourseView = () => {
     setLoading(true);
     try {
       // Get subject details (from enrolled groups)
-      const groups = await studentApi.fetchEnrolledGroups();
+      const groups = await studentApi.fetchSubjects();
       const currentSubject = groups.find((g) => g.id.toString() === subjectId);
       setSubject(currentSubject);
 
       if (currentSubject) {
-          // Fetch chapters for this subject
-          // Note: Backend might need an endpoint for this, for now we simulate or use a combined one
-          // Looking at StudentController, we have /teachers/{teacherId}/subjects/{subjectId}/chapters
-          // But since we are in CourseView by subjectId, we might need a better way.
-          // For now, let's assume we can fetch chapters by subjectId
-          const chaptersData = await studentApi.fetchChaptersBySubject(subjectId);
-          setChapters(chaptersData);
-          if (chaptersData.length > 0) {
+          let chaptersData;
+          if (teacherId) {
+            chaptersData = await studentApi.fetchChaptersByTeacherAndSubject(teacherId, subjectId);
+          } else {
+            chaptersData = await studentApi.fetchChaptersBySubject(subjectId);
+          }
+          setChapters(Array.isArray(chaptersData) ? chaptersData : []);
+          if (chaptersData && chaptersData.length > 0) {
               setSelectedChapter(chaptersData[0]);
               fetchChapterContent(chaptersData[0].id);
           }
@@ -83,14 +91,43 @@ const CourseView = () => {
 
   const fetchChapterContent = async (chapterId) => {
       try {
-          const [videosData, notesData] = await Promise.all([
-              studentApi.fetchVideosByChapter(chapterId),
-              studentApi.fetchNotesByChapter(chapterId)
+          const [videosData, notesData, assignmentsData] = await Promise.all([
+              studentApi.fetchVideosByChapter(chapterId).catch(() => []),
+              studentApi.fetchNotesByChapter(chapterId).catch(() => []),
+              studentApi.fetchAssignmentsByChapter(chapterId).catch(() => [])
           ]);
-          setVideos(videosData);
-          setNotes(notesData);
+          setVideos(Array.isArray(videosData) ? videosData : []);
+          setNotes(Array.isArray(notesData) ? notesData : []);
+          setAssignments(Array.isArray(assignmentsData) ? assignmentsData : []);
       } catch (error) {
           console.error("Error fetching chapter content:", error);
+      }
+  };
+
+  const handleOpenSubmit = (assignment) => {
+      setSelectedAssignment(assignment);
+      setShowSubmitModal(true);
+  };
+
+  const handleSubmitAssignment = async (e) => {
+      e.preventDefault();
+      if (!selectedAssignment) return;
+      setSubmitting(true);
+      try {
+          await studentApi.submitAssignment({
+              assignmentId: selectedAssignment.id,
+              submissionText: submissionData.text,
+              fileUrl: submissionData.file, 
+          });
+          setShowSubmitModal(false);
+          setSubmissionData({ text: "", file: "" });
+          toast.success("Assignment submitted successfully!");
+          // Reload the assignments for the chapter
+          if (selectedChapter) fetchChapterContent(selectedChapter.id);
+      } catch (error) {
+          toast.error("Failed to submit assignment. Make sure you haven't already submitted it.");
+      } finally {
+          setSubmitting(false);
       }
   };
 
@@ -305,12 +342,21 @@ const CourseView = () => {
                         </div>
                       </div>
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
                           if (note.isPaid && !note.isSubscribed) {
                             toast.error("Premium content. Please subscribe to download.");
                             return;
                           }
-                          // Handle download
+                          try {
+                            await studentApi.trackNoteDownload(note.id);
+                            if (note.fileUrl) {
+                              window.open(note.fileUrl, "_blank");
+                            } else {
+                              toast.success("Note download tracked! (No URL provided)");
+                            }
+                          } catch (error) {
+                            toast.error("Failed to download note");
+                          }
                         }}
                         className={`btn-secondary py-2 px-4 text-xs flex items-center gap-2 ${note.isPaid && !note.isSubscribed ? 'opacity-50' : ''}`}
                       >
@@ -324,9 +370,41 @@ const CourseView = () => {
             )}
 
             {activeTab === "assignments" && (
-                <div className="p-12 text-center">
-                    <CheckCircle2 size={40} className="text-slate-200 mx-auto mb-4" />
-                    <p className="text-sm text-slate-400 font-bold">No assignments for this chapter yet</p>
+                <div className="divide-y divide-slate-100">
+                  {assignments.length === 0 ? (
+                    <div className="p-12 text-center">
+                        <CheckCircle2 size={40} className="text-slate-200 mx-auto mb-4" />
+                        <p className="text-sm text-slate-400 font-bold">No assignments for this chapter yet</p>
+                    </div>
+                  ) : (
+                    assignments.map((assignment) => (
+                      <div key={assignment.id} className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className="w-10 h-10 bg-blue-50 flex items-center justify-center shrink-0">
+                            <FileText size={18} className="text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-800">{assignment.title}</p>
+                            <p className="text-xs text-slate-500 mt-1 line-clamp-2">{assignment.description}</p>
+                            <div className="flex items-center gap-3 text-xs text-slate-400 mt-2">
+                              {assignment.dueDate && (
+                                <span className="flex items-center gap-1"><Clock size={12} /> Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+                              )}
+                              {assignment.totalMarks && (
+                                <span className="flex items-center gap-1"><CheckCircle2 size={12} /> {assignment.totalMarks} marks</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleOpenSubmit(assignment)}
+                          className="btn-primary py-2 px-4 text-xs shrink-0 w-full sm:w-auto"
+                        >
+                          Submit
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
             )}
           </div>
@@ -363,6 +441,72 @@ const CourseView = () => {
                 <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Description</h3>
                 <p className="text-sm opacity-80 leading-relaxed">{selectedVideo.description}</p>
             </div>
+        </div>
+      )}
+
+      {/* Submit Assignment Modal */}
+      {showSubmitModal && selectedAssignment && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg shadow-xl border border-slate-200 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-100">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Submit Assignment</h2>
+                <p className="text-xs text-slate-500 mt-1">{selectedAssignment.title}</p>
+              </div>
+              <button 
+                onClick={() => setShowSubmitModal(false)}
+                className="text-slate-400 hover:text-slate-900 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitAssignment} className="p-4 sm:p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                  Submission Notes / Link
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  className="w-full px-4 py-3 border border-slate-200 text-sm focus:outline-none focus:border-slate-900 transition-colors resize-none"
+                  placeholder="Enter your notes or a link to your Google Drive/File..."
+                  value={submissionData.text}
+                  onChange={(e) => setSubmissionData({ ...submissionData, text: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                  File Attachment (URL/Optional)
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-slate-200 text-sm focus:outline-none focus:border-slate-900 transition-colors"
+                  placeholder="https://example.com/file.pdf"
+                  value={submissionData.file}
+                  onChange={(e) => setSubmissionData({ ...submissionData, file: e.target.value })}
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSubmitModal(false)}
+                  className="flex-1 btn-secondary py-3 text-sm font-bold uppercase tracking-widest"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 btn-primary py-3 text-sm font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                  {submitting ? "Submitting..." : "Submit"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

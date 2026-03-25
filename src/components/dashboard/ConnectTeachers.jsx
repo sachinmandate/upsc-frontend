@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { studentApi } from "../../api/studentApi";
 import {
   MessageSquare,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 const ConnectTeachers = () => {
+  const navigate = useNavigate();
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,7 +58,7 @@ const ConnectTeachers = () => {
             <p className="text-sm font-semibold text-slate-800 mb-0.5">Live Chat</p>
             <p className="text-xs text-slate-400">Chat with available mentors in real time</p>
           </div>
-          <button className="btn-primary text-xs py-2 px-4 w-full sm:w-auto opacity-50 cursor-not-allowed">Start Chat</button>
+          <button onClick={() => navigate('/dashboard/student/chat')} className="btn-primary text-xs py-2 px-4 w-full sm:w-auto">Start Chat</button>
         </div>
         <div className="bg-white border border-slate-200 shadow-sm p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="w-12 h-12 bg-amber-50 flex items-center justify-center shrink-0">
