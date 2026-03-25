@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import Navbar from "../layout/Navbar";
 import { User, Mail, Lock, GraduationCap, Briefcase, ChevronRight, Check, Phone, MapPin, Building, Clock, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 const Register = () => {
   const [role, setRole] = useState(null); // null, 'student', 'teacher'
+  const [exams, setExams] = useState([]);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -15,11 +18,32 @@ const Register = () => {
     district: "",
     taluka: "",
     city: "",
-    organization: ""
+    organization: "",
+    examId: ""
   });
+
+  useEffect(() => {
+    const fetchExams = async () => {
+        try {
+            const response = await fetch('/api/public/exams');
+            if (response.ok) {
+                const data = await response.json();
+                setExams(data);
+                // Set first exam as default if available
+                if (data.length > 0) {
+                    setFormData(prev => ({ ...prev, examId: data[0].id.toString() }));
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch exams", error);
+        }
+    };
+    fetchExams();
+  }, []);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -27,12 +51,43 @@ const Register = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleRegister = (e) => {
+  const { register } = useAuth();
+
+  const handleRegister = async (e) => {
     e.preventDefault();
-    if (role === 'teacher') {
-      setIsSuccess(true);
-    } else {
-      navigate("/login");
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let dataToSend;
+      if (role === 'teacher') {
+        const { confirmPassword, ...teacherData } = formData;
+        dataToSend = teacherData;
+      } else {
+        dataToSend = formData;
+      }
+      
+      const result = await register(dataToSend, role);
+
+      if (result.success) {
+        if (role === 'teacher') {
+          toast.success("Registration request sent! Please wait for admin approval.");
+          setIsSuccess(true);
+        } else {
+          toast.success("Account created successfully! Please login.");
+          navigate("/login");
+        }
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error("An error occurred during registration. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -52,7 +107,7 @@ const Register = () => {
             <p className="text-sm text-slate-500 mb-10">
               We will notify you via email once your credentials have been verified.
             </p>
-            <button 
+            <button
               onClick={() => navigate("/login")}
               className="btn-primary w-full"
             >
@@ -69,10 +124,10 @@ const Register = () => {
       <Navbar />
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-6 bg-[#fdfbf7]">
         <div className="w-full max-w-3xl bg-white border border-slate-200 shadow-sm p-4 sm:p-10 mt-16 relative">
-          
+
           <div className="absolute -top-12 left-0 right-0 flex justify-center sm:justify-end px-2">
-            <Link 
-              to="/login" 
+            <Link
+              to="/login"
               className="text-sm font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 transition-colors"
             >
               Already have an account? <span className="text-amber-600 underline decoration-2 underline-offset-4">Sign In</span>
@@ -83,7 +138,7 @@ const Register = () => {
             <div className="max-w-md mx-auto text-center py-10">
               <h1 className="text-3xl font-bold text-slate-900 mb-2">Create Account</h1>
               <p className="text-slate-600 mb-10">Select your role to continue with the registration.</p>
-              
+
               <div className="grid gap-4">
                 <button
                   onClick={() => setRole("student")}
@@ -131,7 +186,7 @@ const Register = () => {
                   </h1>
                   <p className="text-sm text-slate-600">Join the MPSC–UPSC academic hub.</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setRole(null)}
                   className="text-xs font-bold text-slate-400 hover:text-slate-800 uppercase tracking-widest border-b border-transparent hover:border-slate-800 ml-4"
                 >
@@ -140,9 +195,9 @@ const Register = () => {
               </div>
 
               <form onSubmit={handleRegister} className="space-y-8">
-                {/* 1. Identity Section */}
+                {/* 1. Identity & Location Section */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#d97706]">1. Identity & Credentials</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#d97706]">1. Identity & Location</h3>
                   <div className="grid sm:grid-cols-2 gap-x-6 gap-y-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">First Name</label>
@@ -150,7 +205,7 @@ const Register = () => {
                         {formData.firstName === "" && (
                           <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
                         )}
-                        <input name="firstName" value={formData.firstName} onChange={handleChange} className={`input ${formData.firstName === "" ? "pl-10" : "pl-4"}`} required />
+                        <input name="firstName" value={formData.firstName} onChange={handleChange} className={`input ${formData.firstName === "" ? "pl-10" : "pl-4"}`} required disabled={loading} />
                       </div>
                     </div>
                     <div className="space-y-1">
@@ -159,16 +214,81 @@ const Register = () => {
                         {formData.lastName === "" && (
                           <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
                         )}
-                        <input name="lastName" value={formData.lastName} onChange={handleChange} className={`input ${formData.lastName === "" ? "pl-10" : "pl-4"}`} required />
+                        <input name="lastName" value={formData.lastName} onChange={handleChange} className={`input ${formData.lastName === "" ? "pl-10" : "pl-4"}`} required disabled={loading} />
                       </div>
                     </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">District</label>
+                      <div className="relative">
+                        {formData.district === "" && (
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
+                        )}
+                        <input name="district" value={formData.district} onChange={handleChange} className={`input ${formData.district === "" ? "pl-10" : "pl-4"}`} required disabled={loading} />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Taluka</label>
+                      <div className="relative">
+                        {formData.taluka === "" && (
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
+                        )}
+                        <input name="taluka" value={formData.taluka} onChange={handleChange} className={`input ${formData.taluka === "" ? "pl-10" : "pl-4"}`} required disabled={loading} />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">City</label>
+                      <div className="relative">
+                        {formData.city === "" && (
+                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
+                        )}
+                        <input name="city" value={formData.city} onChange={handleChange} className={`input ${formData.city === "" ? "pl-10" : "pl-4"}`} required disabled={loading} />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {role === "student" ? "College / School" : "Organization / Department"}
+                      </label>
+                      <div className="relative">
+                        {formData.organization === "" && (
+                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
+                        )}
+                        <input name="organization" value={formData.organization} onChange={handleChange} className={`input ${formData.organization === "" ? "pl-10" : "pl-4"}`} required disabled={loading} />
+                      </div>
+                    </div>
+
+                    {role === "student" && (
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Target Exam</label>
+                        <div className="relative">
+                          <select 
+                            name="examId" 
+                            value={formData.examId} 
+                            onChange={handleChange} 
+                            className="input pl-4 bg-white" 
+                            required 
+                            disabled={loading}
+                          >
+                            {exams.map(exam => (
+                              <option key={exam.id} value={exam.id}>{exam.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Credentials Section */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#d97706]">2. Credentials</h3>
+                  <div className="grid sm:grid-cols-2 gap-x-6 gap-y-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Email Address</label>
                       <div className="relative">
                         {formData.email === "" && (
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
                         )}
-                        <input name="email" value={formData.email} onChange={handleChange} className={`input ${formData.email === "" ? "pl-10" : "pl-4"}`} type="email" required />
+                        <input name="email" value={formData.email} onChange={handleChange} className={`input ${formData.email === "" ? "pl-10" : "pl-4"}`} type="email" required disabled={loading} />
                       </div>
                     </div>
                     <div className="space-y-1">
@@ -177,7 +297,7 @@ const Register = () => {
                         {formData.mobile === "" && (
                           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
                         )}
-                        <input name="mobile" value={formData.mobile} onChange={handleChange} className={`input ${formData.mobile === "" ? "pl-10" : "pl-4"}`} type="tel" required />
+                        <input name="mobile" value={formData.mobile} onChange={handleChange} className={`input ${formData.mobile === "" ? "pl-10" : "pl-4"}`} type="tel" required disabled={loading} />
                       </div>
                     </div>
                     <div className="space-y-1">
@@ -186,13 +306,14 @@ const Register = () => {
                         {formData.password === "" && (
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
                         )}
-                        <input 
+                        <input
                           name="password"
                           value={formData.password}
                           onChange={handleChange}
-                          className={`input ${formData.password === "" ? "pl-10" : "pl-4"} pr-10`} 
-                          type={showPassword ? "text" : "password"} 
-                          required 
+                          className={`input ${formData.password === "" ? "pl-10" : "pl-4"} pr-10`}
+                          type={showPassword ? "text" : "password"}
+                          required
+                          disabled={loading}
                         />
                         <button
                           type="button"
@@ -209,13 +330,14 @@ const Register = () => {
                         {formData.confirmPassword === "" && (
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
                         )}
-                        <input 
+                        <input
                           name="confirmPassword"
                           value={formData.confirmPassword}
                           onChange={handleChange}
-                          className={`input ${formData.confirmPassword === "" ? "pl-10" : "pl-4"} pr-10`} 
-                          type={showConfirmPassword ? "text" : "password"} 
-                          required 
+                          className={`input ${formData.confirmPassword === "" ? "pl-10" : "pl-4"} pr-10`}
+                          type={showConfirmPassword ? "text" : "password"}
+                          required
+                          disabled={loading}
                         />
                         <button
                           type="button"
@@ -229,72 +351,6 @@ const Register = () => {
                   </div>
                 </div>
 
-                {/* 2. Role Specific Section */}
-                {role === "student" ? (
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#d97706]">2. Exam Information</h3>
-                    <div className="grid sm:grid-cols-2 gap-x-6 gap-y-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Exam Type</label>
-                        <select className="input appearance-none bg-white">
-                          <option>MPSC</option>
-                          <option>UPSC</option>
-                          <option>Both</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Attempt Stage</label>
-                        <select className="input appearance-none bg-white">
-                          <option>Beginner</option>
-                          <option>Appearing this year</option>
-                          <option>Repeater</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#d97706]">2. Professional & Location Information</h3>
-                    <div className="grid sm:grid-cols-2 gap-x-6 gap-y-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">District</label>
-                        <div className="relative">
-                          {formData.district === "" && (
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
-                          )}
-                          <input name="district" value={formData.district} onChange={handleChange} className={`input ${formData.district === "" ? "pl-10" : "pl-4"}`} required />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Taluka</label>
-                        <div className="relative">
-                          {formData.taluka === "" && (
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
-                          )}
-                          <input name="taluka" value={formData.taluka} onChange={handleChange} className={`input ${formData.taluka === "" ? "pl-10" : "pl-4"}`} required />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">City</label>
-                        <div className="relative">
-                          {formData.city === "" && (
-                            <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
-                          )}
-                          <input name="city" value={formData.city} onChange={handleChange} className={`input ${formData.city === "" ? "pl-10" : "pl-4"}`} required />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Organization</label>
-                        <div className="relative">
-                          {formData.organization === "" && (
-                            <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
-                          )}
-                          <input name="organization" value={formData.organization} onChange={handleChange} className={`input ${formData.organization === "" ? "pl-10" : "pl-4"}`} required />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* 3. Consent Section */}
                 <div className="space-y-4 pt-4 border-t border-slate-50">
@@ -308,8 +364,8 @@ const Register = () => {
                     </label>
                   </div>
 
-                  <button type="submit" className="btn-primary w-full py-4 text-sm tracking-widest uppercase">
-                    Complete Registration
+                  <button type="submit" disabled={loading} className="btn-primary w-full py-4 text-sm tracking-widest uppercase disabled:opacity-75">
+                    {loading ? "Processing..." : "Complete Registration"}
                   </button>
                 </div>
               </form>

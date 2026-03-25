@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import Navbar from "../layout/Navbar";
-import { Mail, Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { useAuth } from "../../../context/AuthContext";
+import Navbar from "../../layout/Navbar";
+import { Mail, Lock, Eye, EyeOff, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 
-const Login = () => {
+const TeacherLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -23,11 +23,11 @@ const Login = () => {
 
     setLoading(true);
 
-    const result = await login(email, password, 'student');
+    const result = await login(email, password, 'teacher');
 
     if (result.success) {
-      toast.success("Login successful!");
-      navigate("/dashboard/student");
+      toast.success("Teacher login successful!");
+      navigate("/teacher/dashboard");
     } else {
       toast.error(result.message);
     }
@@ -43,25 +43,25 @@ const Login = () => {
 
           <div className="absolute -top-12 left-0 right-0 flex justify-center sm:justify-end px-2">
             <Link
-              to="/register"
+              to="/login"
               className="text-sm font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 transition-colors"
             >
-              No account? <span className="text-amber-600 underline decoration-2 underline-offset-4">Sign Up</span>
+              Not a teacher? <span className="text-amber-600 underline decoration-2 underline-offset-4">Student Login</span>
             </Link>
           </div>
 
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 bg-amber-50 border border-slate-200 rounded-xl flex items-center justify-center text-[#d97706]">
-              <ShieldCheck size={32} />
+              <GraduationCap size={32} />
             </div>
           </div>
 
           <h1 className="text-3xl font-bold text-center text-slate-900 mb-2">
-            Login to MPSC–UPSC Portal
+            Teacher Login
           </h1>
 
           <p className="text-center text-slate-500 mb-8 max-w-[280px] mx-auto leading-relaxed text-sm italic">
-            "Access your existing account securely."
+            "Access your teacher dashboard securely."
           </p>
 
           <form onSubmit={handleLogin} className="space-y-5">
@@ -124,11 +124,11 @@ const Login = () => {
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
-                id="remember"
+                id="remember-teacher"
                 className="w-4 h-4 rounded border-slate-300 accent-amber-600 cursor-pointer"
               />
               <label
-                htmlFor="remember"
+                htmlFor="remember-teacher"
                 className="text-sm text-slate-600 cursor-pointer select-none"
               >
                 Remember me
@@ -140,7 +140,7 @@ const Login = () => {
               disabled={loading}
               className="w-full h-11 bg-slate-900 text-white text-sm font-semibold rounded-md hover:bg-slate-800 active:scale-[0.98] transition-all disabled:opacity-70"
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? "Signing In..." : "Sign In as Teacher"}
             </button>
 
             <div className="relative my-6 text-center">
@@ -164,23 +164,13 @@ const Login = () => {
               <span>Continue with Google</span>
             </button>
 
-            <p className="text-center text-sm text-slate-500 pt-4">
-              New here?{" "}
-              <Link
-                to="/register"
-                className="text-slate-800 font-bold hover:underline"
-              >
-                Register an account
-              </Link>
-            </p>
-
             <div className="text-center border-t border-slate-200 pt-5">
-              <p className="text-sm text-slate-500 mb-2">Are you a teacher?</p>
+              <p className="text-sm text-slate-500 mb-2">Are you a student?</p>
               <Link
-                to="/teacher/login"
+                to="/login"
                 className="inline-flex items-center gap-2 text-sm font-bold text-amber-600 hover:text-amber-700 underline decoration-2 underline-offset-4 transition-colors"
               >
-                Login as Teacher →
+                ← Login as Student
               </Link>
             </div>
 
@@ -191,4 +181,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default TeacherLogin;
